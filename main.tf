@@ -1,192 +1,55 @@
-provider "kubernetes" {
-  config_path = "~/.kube/config"
+terraform {
+  backend "kubernetes" {
+    secret_suffix    = "asterisk"
+    config_path      = "~/.kube/config"
+  }
+  required_providers {
+    vault = {
+      source = "hashicorp/vault"
+      version = "3.9.1"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+    }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+    }
+  }
 }
 
-provider "docker" {
-  registry_auth {
-    address = "registry-1.docker.io"
-    config_file = pathexpand("~/.docker/config.json")
-  }
+provider "vault" {
+  address = "http://10.0.0.45:8200"
+}
+
+provider "kubernetes" {
+  config_path = "~/.kube/config"
 }
 
 data "vault_generic_secret" "mariadb" {
   path = "kv/databases/mariadb"
 }
 
-data kubernetes_namespace_v1 asterisk {
+resource "kubernetes_namespace_v1" "asterisk" {
   metadata {
     name = "asterisk"
   }
 }
 
-resource "docker_registry_image" "asterisk" {
-  name = "saveloy/asterisk"
-  build {
-    context = path.cwd
-    auth_config {
-      host_name = "saveloy/asterisk"
-    }
-  }
-}
-
-resource "kubernetes_config_map_v1" "asterisk" {
+resource "kubernetes_config_map_v1" "other" {
   metadata {
-    name = "asterisk"
-    namespace = data.kubernetes_namespace_v1.asterisk.metadata[0].name
+    name = "other"
+    namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
   }
   data = {
-    "odbc.ini" =<<EOT
+    "MariaDB_odbc_data_source_template.ini" =<<EOT
 [asterisk]
-Driver = MySQL
-Description = покдючение к базе данных для asterisk
-Sever = mariadb.mariadb
-Post = 3306
-Database = asterisk
-UserName = root
-Password = ${data.vault_generic_secret.mariadb.data["password"]}
-EOT
-    "modules.conf" =<<EOT
-[modules]
-autoload = no
-; Applications
-
-load = app_bridgewait.so
-load = app_dial.so
-load = app_playback.so
-load = app_stack.so
-load = app_verbose.so
-load = app_voicemail.so
-load = app_directory.so
-load = app_confbridge.so
-load = app_queue.so
-
-; Bridging
-
-load = bridge_builtin_features.so
-load = bridge_builtin_interval_features.so
-load = bridge_holding.so
-load = bridge_native_rtp.so
-load = bridge_simple.so
-load = bridge_softmix.so
-
-; Call Detail Records
-
-load = cdr_custom.so
-
-; Channel Drivers
-
-load = chan_bridge_media.so
-load = chan_pjsip.so
-
-; Codecs
-
-load = codec_gsm.so
-load = codec_resample.so
-load = codec_ulaw.so
-load = codec_g722.so
-
-; Formats
-
-load = format_gsm.so
-load = format_pcm.so
-load = format_wav_gsm.so
-load = format_wav.so
-
-; Functions
-
-load = func_callerid.so
-load = func_cdr.so
-load = func_pjsip_endpoint.so
-load = func_sorcery.so
-load = func_devstate.so
-load = func_strings.so
-
-; Core/PBX
-
-load = pbx_config.so
-
-; Resources
-
-load = res_http_websocket.so
-load = res_musiconhold.so
-load = res_pjproject.so
-load = res_pjsip_acl.so
-load = res_pjsip_authenticator_digest.so
-load = res_pjsip_caller_id.so
-load = res_pjsip_dialog_info_body_generator.so
-load = res_pjsip_diversion.so
-load = res_pjsip_dtmf_info.so
-load = res_pjsip_endpoint_identifier_anonymous.so
-load = res_pjsip_endpoint_identifier_ip.so
-load = res_pjsip_endpoint_identifier_user.so
-load = res_pjsip_exten_state.so
-load = res_pjsip_header_funcs.so
-load = res_pjsip_logger.so
-load = res_pjsip_messaging.so
-load = res_pjsip_mwi_body_generator.so
-load = res_pjsip_mwi.so
-load = res_pjsip_nat.so
-load = res_pjsip_notify.so
-load = res_pjsip_one_touch_record_info.so
-load = res_pjsip_outbound_authenticator_digest.so
-load = res_pjsip_outbound_publish.so
-load = res_pjsip_outbound_registration.so
-load = res_pjsip_path.so
-load = res_pjsip_pidf_body_generator.so
-load = res_pjsip_pidf_digium_body_supplement.so
-load = res_pjsip_pidf_eyebeam_body_supplement.so
-load = res_pjsip_publish_asterisk.so
-load = res_pjsip_pubsub.so
-load = res_pjsip_refer.so
-load = res_pjsip_registrar.so
-load = res_pjsip_rfc3326.so
-load = res_pjsip_sdp_rtp.so
-load = res_pjsip_send_to_voicemail.so
-load = res_pjsip_session.so
-load = res_pjsip.so
-load = res_pjsip_t38.so
-load = res_pjsip_transport_websocket.so
-load = res_pjsip_xpidf_body_generator.so
-load = res_rtp_asterisk.so
-load = res_sorcery_astdb.so
-load = res_sorcery_config.so
-load = res_sorcery_memory.so
-load = res_sorcery_realtime.so
-load = res_timing_timerfd.so
-
-noload = res_hep.so
-noload = res_hep_pjsip.so
-noload = res_hep_rtcp.so
-
-preload=res_odbc.so
-preload=res_config.so
-EOT
-    "logger.conf" =<<EOT
-[general]
-
-[logfiles]
-
-console = verbose,notice,warning,error
-
-;messages = notice,warning,error
-;full = verbose,notice,warning,error,debug
-;security = security
-EOT
-    "asterisk.conf" =<<EOT
-[options]
-nofork=yes
-; If we want to start Asterisk with a default verbosity for the verbose
-; or debug logger channel types, then we use these settings (by default
-; they are disabled).
-;verbose = 5
-;debug = 2
-
-; User and group to run asterisk as. NOTE: This will require changes to
-; directory and device permissions.
-;runuser = asterisk		; The user to run as. The default is root.
-;rungroup = asterisk		; The group to run as. The default is root
-
-;defaultlanguage = es
+Driver=MariaDB ODBC 3.0 Driver
+Description=покдючение к базе данных для asterisk
+SERVER=mariadb.mariadb
+PORT=3306
+DATABASE=asterisk
+USER=root
+PASSWORD=${data.vault_generic_secret.mariadb.data["root-password"]}
 EOT
     "config.ini" =<<EOT
 # A generic, single database configuration.
@@ -209,7 +72,7 @@ script_location = config
 #sqlalchemy.url = driver://user:pass@localhost/dbname
 
 #sqlalchemy.url = postgresql://user:pass@localhost/asterisk
-sqlalchemy.url = mysql://root:${data.vault_generic_secret.mariadb.data["password"]}@mariadb.mariadb/asterisk
+sqlalchemy.url = mysql://root:${data.vault_generic_secret.mariadb.data["root-password"]}@mariadb.mariadb/asterisk
 
 
 # Logging configuration
@@ -248,14 +111,190 @@ format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 
 EOT
+    "MariaDB_odbc_driver_template.ini" = <<EOT
+[MariaDB ODBC 3.0 Driver]
+Description = MariaDB Connector/ODBC v.3.0
+Driver = /usr/lib/libmaodbc.so
+EOT
   }
 }
 
-resource kubernetes_deployment_v1 "asterisk" {
-  depends_on = [docker_registry_image.asterisk]
+resource "kubernetes_config_map_v1" "asterisk" {
   metadata {
     name = "asterisk"
-    namespace = data.kubernetes_namespace_v1.asterisk.metadata[0].name
+    namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
+  }
+  data = {
+    "modules.conf" =<<EOT
+[modules]
+autoload = yes
+preload => res_odbc.so
+preload => res_config_odbc.so
+preload-require = res_odbc.so
+require = res_pjsip.so
+EOT
+    "logger.conf" =<<EOT
+[general]
+dateformat = %F %T.%3q
+use_callids = yes
+appendhostname = yes
+queue_log = yes
+queue_log_to_file = no
+queue_log_name = queue_log
+queue_log_realtime_use_gmt = no
+rotatestrategy = rotate
+[logfiles]
+console => notice,warning,error
+security => security
+full => notice,warning,error,verbose,dtmf,fax
+EOT
+    "asterisk.conf" =<<EOT
+[options]
+nofork=yes
+verbose = 5
+debug = 2
+documentation_language = ru
+EOT
+    "pjsip.conf" =<<EOT
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0
+[transport-tls]
+type=transport
+protocol=tls
+bind=0.0.0.0
+cert_file=/etc/keys/tls.crt
+priv_key_file=/etc/keys/tls.key
+EOT
+    "pjsip_wizard.conf" = <<EOT
+[goip]
+type = wizard
+sends_auth = yes
+sends_registrations = yes
+remote_hosts = 10.0.0.37:5061
+outbound_auth/username = goip-16
+outbound_auth/password = Saveli12
+endpoint/context = default
+aor/qualify_frequency = 15
+EOT
+    "ccss.conf" = <<EOT
+[general]
+cc_max_requests = 20
+EOT
+    "cel.conf" = <<EOT
+[general]
+enable=yes
+apps=dial,park
+events=APP_START,CHAN_START,CHAN_END,ANSWER,HANGUP,BRIDGE_ENTER,BRIDGE_EXIT
+EOT
+    "cdr.conf" = <<EOT
+[general]
+enable=yes
+EOT
+    "res_odbc.conf" =<<EOT
+[asterisk]
+enabled => yes
+dsn => asterisk
+username => root
+password => ${data.vault_generic_secret.mariadb.data["root-password"]}
+pre-connect => yes
+EOT
+    "sorcery.conf" =<<EOT
+[res_pjsip]
+endpoint = realtime,ps_endpoints
+auth = realtime,ps_auths
+aor = realtime,ps_aors
+domain_alias = realtime,ps_domain_aliases
+contact=realtime,ps_contacts
+
+[res_pjsip_endpoint_identifier_ip]
+identify=realtime,ps_endpoint_id_ips
+EOT
+    "extconfig.conf" = <<EOT
+[settings]
+ps_endpoints => odbc,asterisk
+ps_auths => odbc,asterisk
+ps_aors => odbc,asterisk
+ps_domain_aliases => odbc,asterisk
+ps_endpoint_id_ips =>  odbc,asterisk
+ps_contacts => odbc,asterisk
+EOT
+    "http.conf" =<<EOT
+[general]
+enabled=yes
+bindaddr=0.0.0.0
+bindport=8088
+EOT
+    "indications.conf" = <<EOT
+[ru]
+description = Russia
+ringcadence = 1000,4000
+dial = 425
+busy = 425/250,0/250
+ring = 425/1000,0/4000
+congestion = 425/250,0/250,425/750,0/250
+callwaiting = 425/50,0/1000
+dialrecall = 350+440
+record = 425/250,0/250
+info = 950/330,1400/330,1800/330
+stutter = 350+440
+EOT
+    "extensions.conf" = <<EOT
+[general]
+[globals]
+[sets]
+exten => 100,1,Dial(PJSIP/0000f30A0A01)
+exten => 101,1,Dial(PJSIP/0000f30B0B02)
+exten => 102,1,Dial(PJSIP/SOFTPHONE_A)
+exten => 103,1,Dial(PJSIP/SOFTPHONE_B)
+exten => 200,1,Answer()
+  same => n,Playback(hello-world)
+  same => n,Hangup()
+EOT
+    "rtp.conf" = <<EOT
+general
+rtpstart=10000
+rtpend=20000
+EOT
+  }
+}
+
+data "vault_generic_secret" "kolve" {
+  path = "kv/kolve-ru"
+}
+
+data "vault_generic_secret" "cert-manager" {
+  path = "kv/cert-manager"
+}
+
+data "vault_generic_secret" "my-flora-dot-shop" {
+  path = "kv/my-flora-dot-shop"
+}
+
+resource "kubectl_manifest" "asterisk" {
+  yaml_body=<<EOT
+apiVersion: "cert-manager.io/v1"
+kind: "Certificate"
+metadata:
+  name: "asterisk"
+  namespace: ${kubernetes_namespace_v1.asterisk.metadata[0].name}
+spec:
+  secretName: "asterisk-tls"
+  issuerRef:
+    name: ${data.vault_generic_secret.cert-manager.data["cluster-issuer"]}
+    kind: "ClusterIssuer"
+    group: "cert-manager.io"
+  dnsNames:
+  - ${data.vault_generic_secret.my-flora-dot-shop.data["hostname"]}
+  - ${data.vault_generic_secret.kolve.data["domain"]}
+EOT
+}
+
+resource kubernetes_deployment_v1 "asterisk" {
+  metadata {
+    name = "asterisk"
+    namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
   }
   spec {
     template {
@@ -267,86 +306,92 @@ resource kubernetes_deployment_v1 "asterisk" {
       spec {
         container {
           name = "asterisk"
-          image = "saveloy/asterisk"
-          command = ["/bin/sh"]
-          args = ["-c", "alembic -c config.ini && asterisk"]
+          image = "saveloy/asterisk:0.7.1"
+          command = ["/bin/sh", "-c"]
+          args = ["odbcinst -i -d -f /etc/MariaDB_odbc_driver_template.ini ; odbcinst -i -s -l -f /etc/MariaDB_odbc_data_source_template.ini;asterisk"]
           port {
             name = "pjsip"
             container_port = 5060
+            protocol = "UDP"
           }
           port {
             name = "pjsip-secure"
             container_port = 5061
+            protocol = "UDP"
+          }
+          port {
+            container_port = 8088
+            name = "http"
+          }
+          port {
+            container_port = 10000
+            name = "rtp"
+            protocol = "UDP"
           }
           volume_mount {
-            mount_path = "/etc/odbc.ini"
-            name       = "odbc"
-            sub_path = "odbc.ini"
-          }
-          volume_mount {
-            mount_path = "/etc/asterisk/logger.conf"
-            name       = "logger"
-            sub_path = "logger.conf"
-          }
-          volume_mount {
-            mount_path = "/etc/asterisk/modules.conf"
-            name       = "modules"
-            sub_path = "modules.conf"
-          }
-          volume_mount {
-            mount_path = "/etc/asterisk/asterisk.conf"
+            mount_path = "/etc/asterisk"
             name       = "asterisk"
-            sub_path = "asterisk.conf"
+          }
+          volume_mount {
+            mount_path = "/etc/keys"
+            name       = "tls"
           }
           volume_mount {
             mount_path = "/usr/local/src/asterisk-20.1.0/contrib/ast-db-manage/config.ini"
             name       = "config"
             sub_path = "config.ini"
           }
+          volume_mount {
+            mount_path = "/etc/MariaDB_odbc_data_source_template.ini"
+            name       = "odbc"
+            sub_path = "MariaDB_odbc_data_source_template.ini"
+          }
+          volume_mount {
+            mount_path = "/etc/MariaDB_odbc_driver_template.ini"
+            name       = "odbc-driver"
+            sub_path = "MariaDB_odbc_driver_template.ini"
+          }
+        }
+        volume {
+          name = "odbc-driver"
+          config_map {
+            name = kubernetes_config_map_v1.other.metadata[0].name
+            items {
+              key = "MariaDB_odbc_driver_template.ini"
+              path = "MariaDB_odbc_driver_template.ini"
+            }
+          }
         }
         volume {
           name = "config"
           config_map {
-            name = kubernetes_config_map_v1.asterisk.metadata[0].name
+            name = kubernetes_config_map_v1.other.metadata[0].name
             items {
               key = "config.ini"
+              path = "config.ini"
             }
           }
         }
         volume {
           name = "odbc"
           config_map {
-            name = kubernetes_config_map_v1.asterisk.metadata[0].name
+            name = kubernetes_config_map_v1.other.metadata[0].name
             items {
-              key = "odbc.ini"
+              key = "MariaDB_odbc_data_source_template.ini"
+              path = "MariaDB_odbc_data_source_template.ini"
             }
           }
         }
         volume {
-          name = "logger"
-          config_map {
-            name = kubernetes_config_map_v1.asterisk.metadata[0].name
-            items {
-              key = "logger.conf"
-            }
-          }
-        }
-        volume {
-          name = "modules"
-          config_map {
-            name = kubernetes_config_map_v1.asterisk.metadata[0].name
-            items {
-              key = "modules.conf"
-            }
+          name = "tls"
+          secret {
+            secret_name = "asterisk-tls"
           }
         }
         volume {
           name = "asterisk"
           config_map {
             name = kubernetes_config_map_v1.asterisk.metadata[0].name
-            items {
-              key = "asterisk.conf"
-            }
           }
         }
       }
@@ -362,19 +407,78 @@ resource kubernetes_deployment_v1 "asterisk" {
 resource "kubernetes_service_v1" "asterisk" {
   metadata {
     name = "asterisk"
-    namespace = data.kubernetes_namespace_v1.asterisk.metadata[0].name
+    namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
+    annotations = {
+      "external-dns.alpha.kubernetes.io/hostname" = "asterisk-ingress.kolve.ru"
+    }
   }
   spec {
+    type = "LoadBalancer"
     selector = {
       app = "asterisk"
     }
     port {
       port = 5060
-      target_port = "pjsip"
+      name = "pjsip"
+      protocol = "UDP"
     }
     port {
       port = 5061
-      target_port = "pjsip-secure"
+      protocol = "UDP"
+      name = "pjsip-secure"
     }
+    port {
+      port = 8088
+      name = "http"
+    }
+  }
+}
+
+
+resource "kubernetes_ingress_v1" "asterisk" {
+  metadata {
+    name = "asterisk-ingress"
+    namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
+    annotations = {
+      "kubernetes.io/ingress.class" = "nginx"
+      "cert-manager.io/cluster-issuer" = data.vault_generic_secret.cert-manager.data["cluster-issuer"]
+    }
+  }
+  spec {
+    rule {
+      host = "asterisk.kolve.ru"
+      http {
+        path {
+          path      = "/sip"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.asterisk.metadata[0].name
+              port {
+                name = "pjsip"
+              }
+            }
+          }
+        }
+        path {
+          path = "/rtp"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.asterisk.metadata[0].name
+              port {
+                name = "rtp"
+              }
+            }
+          }
+        }
+      }
+    }
+#    tls {
+#      hosts = [
+##        data.vault_generic_secret.influxdb.data["hostname"]
+#      ]
+##      secret_name = "${data.vault_generic_secret.influxdb.data["hostname"]}-tls"
+#    }
   }
 }
