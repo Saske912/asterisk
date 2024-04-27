@@ -1,32 +1,24 @@
 terraform {
   backend "kubernetes" {
-    secret_suffix    = "asterisk"
-    config_path      = "~/.kube/config"
+    secret_suffix = "asterisk"
+    config_path   = "~/.kube/config"
   }
   required_providers {
     vault = {
-      source = "hashicorp/vault"
+      source  = "hashicorp/vault"
       version = "3.9.1"
     }
     kubernetes = {
-      source  = "hashicorp/kubernetes"
+      source = "hashicorp/kubernetes"
     }
     kubectl = {
-      source  = "gavinbunney/kubectl"
+      source = "gavinbunney/kubectl"
+    }
+    helm = {
+      source  = "hashicorp/helm"
+      version = "2.13.1"
     }
   }
-}
-
-provider "vault" {
-  address = "http://10.0.0.45:8200"
-}
-
-provider "kubernetes" {
-  config_path = "~/.kube/config"
-}
-
-data "vault_generic_secret" "mariadb" {
-  path = "kv/databases/mariadb"
 }
 
 resource "kubernetes_namespace_v1" "asterisk" {
@@ -37,21 +29,21 @@ resource "kubernetes_namespace_v1" "asterisk" {
 
 resource "kubernetes_config_map_v1" "other" {
   metadata {
-    name = "other"
+    name      = "other"
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
   }
   data = {
-    "MariaDB_odbc_data_source_template.ini" =<<EOT
+    "MariaDB_odbc_data_source_template.ini" = <<EOT
 [asterisk]
 Driver=MariaDB ODBC 3.0 Driver
 Description=покдючение к базе данных для asterisk
-SERVER=mariadb.mariadb
+SERVER=${local.implicit_host}
 PORT=3306
-DATABASE=asterisk
-USER=root
-PASSWORD=${data.vault_generic_secret.mariadb.data["root-password"]}
+DATABASE=${var.asterisk.database}
+USER=${var.asterisk.username}
+PASSWORD=${random_password.passowrd.result}
 EOT
-    "config.ini" =<<EOT
+    "config.ini"                            = <<EOT
 # A generic, single database configuration.
 
 [alembic]
@@ -72,7 +64,7 @@ script_location = config
 #sqlalchemy.url = driver://user:pass@localhost/dbname
 
 #sqlalchemy.url = postgresql://user:pass@localhost/asterisk
-sqlalchemy.url = mysql://root:${data.vault_generic_secret.mariadb.data["root-password"]}@mariadb.mariadb/asterisk
+sqlalchemy.url = mysql://${var.asterisk.username}:${random_password.passowrd.result}@${local.implicit_host}/${var.asterisk.database}
 
 
 # Logging configuration
@@ -111,7 +103,7 @@ format = %(levelname)-5.5s [%(name)s] %(message)s
 datefmt = %H:%M:%S
 
 EOT
-    "MariaDB_odbc_driver_template.ini" = <<EOT
+    "MariaDB_odbc_driver_template.ini"      = <<EOT
 [MariaDB ODBC 3.0 Driver]
 Description = MariaDB Connector/ODBC v.3.0
 Driver = /usr/lib/libmaodbc.so
@@ -121,11 +113,11 @@ EOT
 
 resource "kubernetes_config_map_v1" "asterisk" {
   metadata {
-    name = "asterisk"
+    name      = "asterisk"
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
   }
   data = {
-    "modules.conf" =<<EOT
+    "modules.conf"      = <<EOT
 [modules]
 autoload = yes
 preload => res_odbc.so
@@ -133,7 +125,7 @@ preload => res_config_odbc.so
 preload-require = res_odbc.so
 require = res_pjsip.so
 EOT
-    "logger.conf" =<<EOT
+    "logger.conf"       = <<EOT
 [general]
 dateformat = %F %T.%3q
 use_callids = yes
@@ -148,14 +140,14 @@ console => notice,warning,error
 security => security
 full => notice,warning,error,verbose,dtmf,fax
 EOT
-    "asterisk.conf" =<<EOT
+    "asterisk.conf"     = <<EOT
 [options]
 nofork=yes
 verbose = 5
 debug = 2
 documentation_language = ru
 EOT
-    "pjsip.conf" =<<EOT
+    "pjsip.conf"        = <<EOT
 [transport-udp]
 type=transport
 protocol=udp
@@ -176,23 +168,23 @@ remote_hosts = 10.0.0.37:5061
 outbound_auth/username = goip-16
 outbound_auth/password = Saveli12
 endpoint/context = default
-aor/qualify_frequency = 15
+aor/qualify_frequency = 15=
 EOT
-    "ccss.conf" = <<EOT
+    "ccss.conf"         = <<EOT
 [general]
 cc_max_requests = 20
 EOT
-    "cel.conf" = <<EOT
+    "cel.conf"          = <<EOT
 [general]
 enable=yes
 apps=dial,park
 events=APP_START,CHAN_START,CHAN_END,ANSWER,HANGUP,BRIDGE_ENTER,BRIDGE_EXIT
 EOT
-    "cdr.conf" = <<EOT
+    "cdr.conf"          = <<EOT
 [general]
 enable=yes
 EOT
-    "res_odbc.conf" =<<EOT
+    "res_odbc.conf"     = <<EOT
 [asterisk]
 enabled => yes
 dsn => asterisk
@@ -200,7 +192,7 @@ username => root
 password => ${data.vault_generic_secret.mariadb.data["root-password"]}
 pre-connect => yes
 EOT
-    "sorcery.conf" =<<EOT
+    "sorcery.conf"      = <<EOT
 [res_pjsip]
 endpoint = realtime,ps_endpoints
 auth = realtime,ps_auths
@@ -211,7 +203,7 @@ contact=realtime,ps_contacts
 [res_pjsip_endpoint_identifier_ip]
 identify=realtime,ps_endpoint_id_ips
 EOT
-    "extconfig.conf" = <<EOT
+    "extconfig.conf"    = <<EOT
 [settings]
 ps_endpoints => odbc,asterisk
 ps_auths => odbc,asterisk
@@ -220,13 +212,13 @@ ps_domain_aliases => odbc,asterisk
 ps_endpoint_id_ips =>  odbc,asterisk
 ps_contacts => odbc,asterisk
 EOT
-    "http.conf" =<<EOT
+    "http.conf"         = <<EOT
 [general]
 enabled=yes
 bindaddr=0.0.0.0
 bindport=8088
 EOT
-    "indications.conf" = <<EOT
+    "indications.conf"  = <<EOT
 [ru]
 description = Russia
 ringcadence = 1000,4000
@@ -240,7 +232,7 @@ record = 425/250,0/250
 info = 950/330,1400/330,1800/330
 stutter = 350+440
 EOT
-    "extensions.conf" = <<EOT
+    "extensions.conf"   = <<EOT
 [general]
 [globals]
 [sets]
@@ -252,7 +244,7 @@ exten => 200,1,Answer()
   same => n,Playback(hello-world)
   same => n,Hangup()
 EOT
-    "rtp.conf" = <<EOT
+    "rtp.conf"          = <<EOT
 general
 rtpstart=10000
 rtpend=20000
@@ -273,7 +265,7 @@ data "vault_generic_secret" "my-flora-dot-shop" {
 }
 
 resource "kubectl_manifest" "asterisk" {
-  yaml_body=<<EOT
+  yaml_body = <<EOT
 apiVersion: "cert-manager.io/v1"
 kind: "Certificate"
 metadata:
@@ -291,9 +283,9 @@ spec:
 EOT
 }
 
-resource kubernetes_deployment_v1 "asterisk" {
+resource "kubernetes_deployment_v1" "asterisk" {
   metadata {
-    name = "asterisk"
+    name      = "asterisk"
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
   }
   spec {
@@ -305,28 +297,28 @@ resource kubernetes_deployment_v1 "asterisk" {
       }
       spec {
         container {
-          name = "asterisk"
-          image = "saveloy/asterisk:0.7.1"
+          name    = "asterisk"
+          image   = "saveloy/asterisk:0.7.1"
           command = ["/bin/sh", "-c"]
-          args = ["odbcinst -i -d -f /etc/MariaDB_odbc_driver_template.ini ; odbcinst -i -s -l -f /etc/MariaDB_odbc_data_source_template.ini;asterisk"]
+          args    = ["odbcinst -i -d -f /etc/MariaDB_odbc_driver_template.ini ; odbcinst -i -s -l -f /etc/MariaDB_odbc_data_source_template.ini;asterisk"]
           port {
-            name = "pjsip"
+            name           = "pjsip"
             container_port = 5060
-            protocol = "UDP"
+            protocol       = "UDP"
           }
           port {
-            name = "pjsip-secure"
+            name           = "pjsip-secure"
             container_port = 5061
-            protocol = "UDP"
+            protocol       = "UDP"
           }
           port {
             container_port = 8088
-            name = "http"
+            name           = "http"
           }
           port {
             container_port = 10000
-            name = "rtp"
-            protocol = "UDP"
+            name           = "rtp"
+            protocol       = "UDP"
           }
           volume_mount {
             mount_path = "/etc/asterisk"
@@ -339,17 +331,17 @@ resource kubernetes_deployment_v1 "asterisk" {
           volume_mount {
             mount_path = "/usr/local/src/asterisk-20.1.0/contrib/ast-db-manage/config.ini"
             name       = "config"
-            sub_path = "config.ini"
+            sub_path   = "config.ini"
           }
           volume_mount {
             mount_path = "/etc/MariaDB_odbc_data_source_template.ini"
             name       = "odbc"
-            sub_path = "MariaDB_odbc_data_source_template.ini"
+            sub_path   = "MariaDB_odbc_data_source_template.ini"
           }
           volume_mount {
             mount_path = "/etc/MariaDB_odbc_driver_template.ini"
             name       = "odbc-driver"
-            sub_path = "MariaDB_odbc_driver_template.ini"
+            sub_path   = "MariaDB_odbc_driver_template.ini"
           }
         }
         volume {
@@ -357,7 +349,7 @@ resource kubernetes_deployment_v1 "asterisk" {
           config_map {
             name = kubernetes_config_map_v1.other.metadata[0].name
             items {
-              key = "MariaDB_odbc_driver_template.ini"
+              key  = "MariaDB_odbc_driver_template.ini"
               path = "MariaDB_odbc_driver_template.ini"
             }
           }
@@ -367,7 +359,7 @@ resource kubernetes_deployment_v1 "asterisk" {
           config_map {
             name = kubernetes_config_map_v1.other.metadata[0].name
             items {
-              key = "config.ini"
+              key  = "config.ini"
               path = "config.ini"
             }
           }
@@ -377,7 +369,7 @@ resource kubernetes_deployment_v1 "asterisk" {
           config_map {
             name = kubernetes_config_map_v1.other.metadata[0].name
             items {
-              key = "MariaDB_odbc_data_source_template.ini"
+              key  = "MariaDB_odbc_data_source_template.ini"
               path = "MariaDB_odbc_data_source_template.ini"
             }
           }
@@ -406,7 +398,7 @@ resource kubernetes_deployment_v1 "asterisk" {
 
 resource "kubernetes_service_v1" "asterisk" {
   metadata {
-    name = "asterisk"
+    name      = "asterisk"
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
     annotations = {
       "external-dns.alpha.kubernetes.io/hostname" = "asterisk-ingress.kolve.ru"
@@ -418,14 +410,14 @@ resource "kubernetes_service_v1" "asterisk" {
       app = "asterisk"
     }
     port {
-      port = 5060
-      name = "pjsip"
+      port     = 5060
+      name     = "pjsip"
       protocol = "UDP"
     }
     port {
-      port = 5061
+      port     = 5061
       protocol = "UDP"
-      name = "pjsip-secure"
+      name     = "pjsip-secure"
     }
     port {
       port = 8088
@@ -437,10 +429,10 @@ resource "kubernetes_service_v1" "asterisk" {
 
 resource "kubernetes_ingress_v1" "asterisk" {
   metadata {
-    name = "asterisk-ingress"
+    name      = "asterisk-ingress"
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
     annotations = {
-      "kubernetes.io/ingress.class" = "nginx"
+      "kubernetes.io/ingress.class"    = "nginx"
       "cert-manager.io/cluster-issuer" = data.vault_generic_secret.cert-manager.data["cluster-issuer"]
     }
   }
@@ -461,7 +453,7 @@ resource "kubernetes_ingress_v1" "asterisk" {
           }
         }
         path {
-          path = "/rtp"
+          path      = "/rtp"
           path_type = "Prefix"
           backend {
             service {
@@ -474,11 +466,11 @@ resource "kubernetes_ingress_v1" "asterisk" {
         }
       }
     }
-#    tls {
-#      hosts = [
-##        data.vault_generic_secret.influxdb.data["hostname"]
-#      ]
-##      secret_name = "${data.vault_generic_secret.influxdb.data["hostname"]}-tls"
-#    }
+    #    tls {
+    #      hosts = [
+    ##        data.vault_generic_secret.influxdb.data["hostname"]
+    #      ]
+    ##      secret_name = "${data.vault_generic_secret.influxdb.data["hostname"]}-tls"
+    #    }
   }
 }

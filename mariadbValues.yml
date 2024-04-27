@@ -1,0 +1,16 @@
+auth:
+  rootPassword: ${rootPassword}
+  database: ${database}
+  username: ${username}
+  password: ${password}
+primary:
+  updateStrategy:
+    type: OnDelete
+  service:
+    type: LoadBalancer
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+  prometheusRule:
+    enabled: true
