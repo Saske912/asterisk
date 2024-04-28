@@ -164,11 +164,11 @@ EOT
 type = wizard
 sends_auth = yes
 sends_registrations = yes
-remote_hosts = 10.0.0.37:5061
-outbound_auth/username = goip-16
-outbound_auth/password = Saveli12
+remote_hosts = ${var.asterisk.goip.endpoint}
+outbound_auth/username = ${var.asterisk.goip.username}
+outbound_auth/password = ${var.asterisk.goip.passoword}
 endpoint/context = default
-aor/qualify_frequency = 15=
+aor/qualify_frequency = 15
 EOT
     "ccss.conf"         = <<EOT
 [general]
@@ -187,9 +187,9 @@ EOT
     "res_odbc.conf"     = <<EOT
 [asterisk]
 enabled => yes
-dsn => asterisk
-username => root
-password => ${data.vault_generic_secret.mariadb.data["root-password"]}
+dsn => ${var.asterisk.database}
+username => ${var.asterisk.username}
+password => ${random_password.passowrd.result}
 pre-connect => yes
 EOT
     "sorcery.conf"      = <<EOT
@@ -247,7 +247,7 @@ EOT
     "rtp.conf"          = <<EOT
 general
 rtpstart=10000
-rtpend=20000
+rtpend=10002
 EOT
   }
 }
@@ -256,8 +256,9 @@ data "vault_generic_secret" "kolve" {
   path = "kv/kolve-ru"
 }
 
-data "vault_generic_secret" "cert-manager" {
-  path = "kv/cert-manager"
+data "vault_kv_secret_v2" "cluster" {
+  mount = "kubernetes"
+  name  = "cluster"
 }
 
 data "vault_generic_secret" "my-flora-dot-shop" {
@@ -274,16 +275,16 @@ metadata:
 spec:
   secretName: "asterisk-tls"
   issuerRef:
-    name: ${data.vault_generic_secret.cert-manager.data["cluster-issuer"]}
+    name: ${data.vault_kv_secret_v2.cluser.data["cluster_issuer"]}
     kind: "ClusterIssuer"
     group: "cert-manager.io"
   dnsNames:
-  - ${data.vault_generic_secret.my-flora-dot-shop.data["hostname"]}
-  - ${data.vault_generic_secret.kolve.data["domain"]}
+  - asterisk.${var.base-domain}
 EOT
 }
 
 resource "kubernetes_deployment_v1" "asterisk" {
+  depends_on = [helm_release.mariadb]
   metadata {
     name      = "asterisk"
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
@@ -317,7 +318,17 @@ resource "kubernetes_deployment_v1" "asterisk" {
           }
           port {
             container_port = 10000
-            name           = "rtp"
+            name           = "rtp1"
+            protocol       = "UDP"
+          }
+          port {
+            container_port = 10001
+            name           = "rtp2"
+            protocol       = "UDP"
+          }
+          port {
+            container_port = 10002
+            name           = "rtp3"
             protocol       = "UDP"
           }
           volume_mount {
@@ -423,6 +434,21 @@ resource "kubernetes_service_v1" "asterisk" {
       port = 8088
       name = "http"
     }
+    port {
+      port     = 10000
+      name     = "rtp1"
+      protocol = "UDP"
+    }
+    port {
+      port     = 10001
+      name     = "rtp2"
+      protocol = "UDP"
+    }
+    port {
+      port     = 10002
+      name     = "rtp3"
+      protocol = "UDP"
+    }
   }
 }
 
@@ -438,28 +464,16 @@ resource "kubernetes_ingress_v1" "asterisk" {
   }
   spec {
     rule {
-      host = "asterisk.kolve.ru"
+      host = "asterisk.${var.base-domain}"
       http {
         path {
-          path      = "/sip"
+          path      = "/"
           path_type = "Prefix"
           backend {
             service {
               name = kubernetes_service_v1.asterisk.metadata[0].name
               port {
-                name = "pjsip"
-              }
-            }
-          }
-        }
-        path {
-          path      = "/rtp"
-          path_type = "Prefix"
-          backend {
-            service {
-              name = kubernetes_service_v1.asterisk.metadata[0].name
-              port {
-                name = "rtp"
+                name = "http"
               }
             }
           }

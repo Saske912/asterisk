@@ -11,11 +11,12 @@ variable "asterisk" {
   type = object({
     username = string
     database = string
+    goip = object({
+      username = string
+      passowrd = string
+      endpoint = string
+    })
   })
-  default = {
-    username = "asterisk"
-    database = "asterisk"
-  }
 }
 
 variable "base-domain" {
