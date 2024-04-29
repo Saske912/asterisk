@@ -1,0 +1,4 @@
+proxy = 10.0.0.10:
+port = 5060
+from_user = pfile
+from_uri = sip:pfile@

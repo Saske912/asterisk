@@ -13,7 +13,7 @@ variable "asterisk" {
     database = string
     goip = object({
       username = string
-      passowrd = string
+      password = string
       endpoint = string
     })
   })

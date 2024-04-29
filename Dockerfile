@@ -13,7 +13,7 @@ RUN make menuselect.makeopts && \
     --enable codec_silk \
     --enable codec_siren7 \
     --enable codec_siren14 \
-    --enable codec_g729a \
+    # --enable codec_g729a \
     --disable CORE-SOUNDS-EN-GSM \
     --enable CORE-SOUNDS-RU-WAV \
     --enable CORE-SOUNDS-RU-G722 \
