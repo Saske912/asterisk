@@ -2,3 +2,4 @@
 **/*.tfstate
 *.lock.hcl
 *.tfvars
+node_modules
