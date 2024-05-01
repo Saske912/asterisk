@@ -338,34 +338,13 @@ resource "kubernetes_deployment_v1" "asterisk" {
           image   = "saveloy/asterisk:0.7.1"
           command = ["/bin/sh", "-c"]
           args    = ["odbcinst -i -d -f /etc/MariaDB_odbc_driver_template.ini ; odbcinst -i -s -l -f /etc/MariaDB_odbc_data_source_template.ini;asterisk"]
-          port {
-            name           = "pjsip"
-            container_port = 5060
-            protocol       = "UDP"
-          }
-          port {
-            name           = "pjsip-secure"
-            container_port = 5061
-            protocol       = "UDP"
-          }
-          port {
-            container_port = 8088
-            name           = "http"
-          }
-          port {
-            container_port = 10000
-            name           = "rtp1"
-            protocol       = "UDP"
-          }
-          port {
-            container_port = 10001
-            name           = "rtp2"
-            protocol       = "UDP"
-          }
-          port {
-            container_port = 10002
-            name           = "rtp3"
-            protocol       = "UDP"
+          dynamic "port" {
+            for_each = local.ports
+            content {
+              name           = port.key
+              container_port = port.value.number
+              protocol       = port.value.protocol
+            }
           }
           volume_mount {
             mount_path = "/etc/asterisk"
@@ -453,34 +432,14 @@ resource "kubernetes_service_v1" "asterisk" {
     selector = {
       app = "asterisk"
     }
-    port {
-      port     = 5060
-      name     = "pjsip"
-      protocol = "UDP"
-    }
-    port {
-      port     = 5061
-      protocol = "UDP"
-      name     = "pjsip-secure"
-    }
-    port {
-      port = 8088
-      name = "http"
-    }
-    port {
-      port     = 10000
-      name     = "rtp1"
-      protocol = "UDP"
-    }
-    port {
-      port     = 10001
-      name     = "rtp2"
-      protocol = "UDP"
-    }
-    port {
-      port     = 10002
-      name     = "rtp3"
-      protocol = "UDP"
+    dynamic "port" {
+      for_each = local.ports
+      content {
+        name        = port.key
+        port        = port.value.number == 4433 ? 443 : port.value.number
+        target_port = port.value.number
+        protocol    = port.value.protocol
+      }
     }
   }
 }
