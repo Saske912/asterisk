@@ -35,6 +35,7 @@ async function main() {
 			transport: "transport-udp",
 			auth: "goip_16_2",
 			disable_direct_media_on_nat: "yes",
+			outbound_auth: "goip_16_2",
 			dtmf_mode: "auto",
 			force_rport: "yes",
 			direct_media: "no",
@@ -46,6 +47,12 @@ async function main() {
 	await prisma.ps_aors.create({
 		data: {
 			id: "goip_16_2",
+			max_contacts: 16
+		}
+	})
+	await prisma.ps_aors.create({
+		data: {
+			id: "104",
 			max_contacts: 1
 		}
 	})
@@ -63,6 +70,36 @@ async function main() {
 			aors: "104",
 			transport: "transport-udp",
 			auth: "104",
+			disable_direct_media_on_nat: "yes",
+			dtmf_mode: "auto",
+			force_rport: "yes",
+			ice_support: "yes",
+			direct_media: "no",
+			disallow: "all",
+			allow: "ulaw,alaw",
+			direct_media_method: null
+		}
+	})
+	await prisma.ps_aors.create({
+		data: {
+			id: "103",
+			max_contacts: 1
+		}
+	})
+	await prisma.ps_auths.create({
+		data: {
+			id: "103",
+			username: "103",
+			password: "saveli12",
+			auth_type: "userpass",
+		}
+	})
+	await prisma.ps_endpoints.create({
+		data: {
+			id: "103",
+			aors: "103",
+			transport: "transport-udp",
+			auth: "103",
 			disable_direct_media_on_nat: "yes",
 			dtmf_mode: "auto",
 			force_rport: "yes",
@@ -100,19 +137,13 @@ async function main() {
 			appdata: "PJSIP/goip_16_2/${EXTEN}"
 		}
 	})
-	await prisma.ps_aors.create({
-		data: {
-			id: "104",
-			max_contacts: 1
-		}
-	})
-	await prisma.ps_aors.create({
-		data: {
-			id: "goip_aor",
-			max_contacts: 16
-			// contact: "sip:10.0.0.10:5060"
-		}
-	})
+	// await prisma.ps_aors.create({
+	// 	data: {
+	// 		id: "goip_aor",
+	// 		max_contacts: 16
+	// 		// contact: "sip:10.0.0.10:5060"
+	// 	}
+	// })
 	// await prisma.ps_registrations.create({
 	// 	data: {
 	// 		id: "goip_register",
