@@ -3,3 +3,4 @@
 *.lock.hcl
 *.tfvars
 node_modules
+**/*.env

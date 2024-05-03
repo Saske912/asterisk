@@ -1,5 +1,10 @@
 {
   "dependencies": {
-    "@prisma/client": "^5.13.0"
+    "@prisma/client": "^5.13.0",
+    "crypto-js": "^4.2.0"
+  },
+  "devDependencies": {
+    "@types/crypto-js": "^4.2.2",
+    "@types/node": "^20.12.7"
   }
 }

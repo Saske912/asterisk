@@ -73,10 +73,10 @@ locals {
       number   = 10009
       protocol = "UDP"
     }
-    rtp11 = {
-      number   = 10010
-      protocol = "UDP"
-    }
+    # rtp11 = {
+    #   number   = 10010
+    #   protocol = "UDP"
+    # }
     rtp12 = {
       number   = 10011
       protocol = "UDP"
