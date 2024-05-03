@@ -76,6 +76,7 @@ function main() {
                                 transport: "transport-udp",
                                 auth: "goip_16_2",
                                 disable_direct_media_on_nat: "yes",
+                                outbound_auth: "goip_16_2",
                                 dtmf_mode: "auto",
                                 force_rport: "yes",
                                 direct_media: "no",
@@ -89,10 +90,18 @@ function main() {
                     return [4 /*yield*/, prisma.ps_aors.create({
                             data: {
                                 id: "goip_16_2",
-                                max_contacts: 1
+                                max_contacts: 16
                             }
                         })];
                 case 3:
+                    _a.sent();
+                    return [4 /*yield*/, prisma.ps_aors.create({
+                            data: {
+                                id: "104",
+                                max_contacts: 1
+                            }
+                        })];
+                case 4:
                     _a.sent();
                     return [4 /*yield*/, prisma.ps_auths.create({
                             data: {
@@ -102,7 +111,7 @@ function main() {
                                 auth_type: "userpass",
                             }
                         })];
-                case 4:
+                case 5:
                     _a.sent();
                     return [4 /*yield*/, prisma.ps_endpoints.create({
                             data: {
@@ -120,7 +129,43 @@ function main() {
                                 direct_media_method: null
                             }
                         })];
-                case 5:
+                case 6:
+                    _a.sent();
+                    return [4 /*yield*/, prisma.ps_aors.create({
+                            data: {
+                                id: "103",
+                                max_contacts: 1
+                            }
+                        })];
+                case 7:
+                    _a.sent();
+                    return [4 /*yield*/, prisma.ps_auths.create({
+                            data: {
+                                id: "103",
+                                username: "103",
+                                password: "saveli12",
+                                auth_type: "userpass",
+                            }
+                        })];
+                case 8:
+                    _a.sent();
+                    return [4 /*yield*/, prisma.ps_endpoints.create({
+                            data: {
+                                id: "103",
+                                aors: "103",
+                                transport: "transport-udp",
+                                auth: "103",
+                                disable_direct_media_on_nat: "yes",
+                                dtmf_mode: "auto",
+                                force_rport: "yes",
+                                ice_support: "yes",
+                                direct_media: "no",
+                                disallow: "all",
+                                allow: "ulaw,alaw",
+                                direct_media_method: null
+                            }
+                        })];
+                case 9:
                     _a.sent();
                     return [4 /*yield*/, prisma.extensions.create({
                             data: {
@@ -131,7 +176,7 @@ function main() {
                                 appdata: "PJSIP/goip_16_2/${EXTEN}"
                             }
                         })];
-                case 6:
+                case 10:
                     _a.sent();
                     return [4 /*yield*/, prisma.extensions.create({
                             data: {
@@ -142,7 +187,7 @@ function main() {
                                 appdata: "PJSIP/goip_16_2/${EXTEN}"
                             }
                         })];
-                case 7:
+                case 11:
                     _a.sent();
                     return [4 /*yield*/, prisma.extensions.create({
                             data: {
@@ -152,24 +197,14 @@ function main() {
                                 app: "Dial",
                                 appdata: "PJSIP/goip_16_2/${EXTEN}"
                             }
-                        })];
-                case 8:
-                    _a.sent();
-                    return [4 /*yield*/, prisma.ps_aors.create({
-                            data: {
-                                id: "104",
-                                max_contacts: 1
-                            }
-                        })];
-                case 9:
-                    _a.sent();
-                    return [4 /*yield*/, prisma.ps_aors.create({
-                            data: {
-                                id: "goip_aor",
-                                max_contacts: 16
-                                // contact: "sip:10.0.0.10:5060"
-                            }
                         })
+                        // await prisma.ps_aors.create({
+                        // 	data: {
+                        // 		id: "goip_aor",
+                        // 		max_contacts: 16
+                        // 		// contact: "sip:10.0.0.10:5060"
+                        // 	}
+                        // })
                         // await prisma.ps_registrations.create({
                         // 	data: {
                         // 		id: "goip_register",
@@ -221,7 +256,7 @@ function main() {
                         // 	}
                         // })
                     ];
-                case 10:
+                case 12:
                     _a.sent();
                     return [2 /*return*/];
             }
