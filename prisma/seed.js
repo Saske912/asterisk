@@ -119,98 +119,49 @@ function main() {
                                 allow: "ulaw,alaw",
                                 direct_media_method: null
                             }
-                        })
-                        // await prisma.extensions.create({
-                        // 	data: {
-                        // 		context: "default",
-                        // 		exten: "_+7XXXXXXXXXX",
-                        // 		priority: 1,
-                        // 		app: "Dial",
-                        // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                        // 	}
-                        // })
-                        // await prisma.extensions.create({
-                        // 	data: {
-                        // 		context: "default",
-                        // 		exten: "_XXXXXXXXXXX",
-                        // 		priority: 1,
-                        // 		app: "Dial",
-                        // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                        // 	}
-                        // })
-                        // await prisma.extensions.create({
-                        // 	data: {
-                        // 		context: "default",
-                        // 		exten: "_8XXXXXXXXX",
-                        // 		priority: 1,
-                        // 		app: "Dial",
-                        // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                        // 	}
-                        // })
-                    ];
+                        })];
                 case 5:
                     _a.sent();
-                    // await prisma.extensions.create({
-                    // 	data: {
-                    // 		context: "default",
-                    // 		exten: "_+7XXXXXXXXXX",
-                    // 		priority: 1,
-                    // 		app: "Dial",
-                    // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                    // 	}
-                    // })
-                    // await prisma.extensions.create({
-                    // 	data: {
-                    // 		context: "default",
-                    // 		exten: "_XXXXXXXXXXX",
-                    // 		priority: 1,
-                    // 		app: "Dial",
-                    // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                    // 	}
-                    // })
-                    // await prisma.extensions.create({
-                    // 	data: {
-                    // 		context: "default",
-                    // 		exten: "_8XXXXXXXXX",
-                    // 		priority: 1,
-                    // 		app: "Dial",
-                    // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                    // 	}
-                    // })
+                    return [4 /*yield*/, prisma.extensions.create({
+                            data: {
+                                context: "default",
+                                exten: "_+7XXXXXXXXXX",
+                                priority: 1,
+                                app: "Dial",
+                                appdata: "PJSIP/goip_16_2/${EXTEN}"
+                            }
+                        })];
+                case 6:
+                    _a.sent();
+                    return [4 /*yield*/, prisma.extensions.create({
+                            data: {
+                                context: "default",
+                                exten: "_XXXXXXXXXXX",
+                                priority: 1,
+                                app: "Dial",
+                                appdata: "PJSIP/goip_16_2/${EXTEN}"
+                            }
+                        })];
+                case 7:
+                    _a.sent();
+                    return [4 /*yield*/, prisma.extensions.create({
+                            data: {
+                                context: "default",
+                                exten: "_8XXXXXXXXXX",
+                                priority: 1,
+                                app: "Dial",
+                                appdata: "PJSIP/goip_16_2/${EXTEN}"
+                            }
+                        })];
+                case 8:
+                    _a.sent();
                     return [4 /*yield*/, prisma.ps_aors.create({
                             data: {
                                 id: "104",
                                 max_contacts: 1
                             }
                         })];
-                case 6:
-                    // await prisma.extensions.create({
-                    // 	data: {
-                    // 		context: "default",
-                    // 		exten: "_+7XXXXXXXXXX",
-                    // 		priority: 1,
-                    // 		app: "Dial",
-                    // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                    // 	}
-                    // })
-                    // await prisma.extensions.create({
-                    // 	data: {
-                    // 		context: "default",
-                    // 		exten: "_XXXXXXXXXXX",
-                    // 		priority: 1,
-                    // 		app: "Dial",
-                    // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                    // 	}
-                    // })
-                    // await prisma.extensions.create({
-                    // 	data: {
-                    // 		context: "default",
-                    // 		exten: "_8XXXXXXXXX",
-                    // 		priority: 1,
-                    // 		app: "Dial",
-                    // 		appdata: "PJSIP/goip_16__2/${EXTEN}"
-                    // 	}
-                    // })
+                case 9:
                     _a.sent();
                     return [4 /*yield*/, prisma.ps_aors.create({
                             data: {
@@ -218,45 +169,39 @@ function main() {
                                 max_contacts: 16
                                 // contact: "sip:10.0.0.10:5060"
                             }
-                        })];
-                case 7:
-                    _a.sent();
-                    return [4 /*yield*/, prisma.ps_registrations.create({
-                            data: {
-                                id: "goip_register",
-                                auth_rejection_permanent: "no",
-                                support_path: "no",
-                                outbound_auth: "goip_auth",
-                                transport: "transport-udp",
-                                endpoint: "10.0.0.10",
-                                support_outbound: "yes"
-                            }
-                        })];
-                case 8:
-                    _a.sent();
-                    return [4 /*yield*/, prisma.iaxfriends.create({
-                            data: {
-                                trunk: "yes",
-                                name: "goip_16_2",
-                                type: "peer",
-                                secret: password,
-                                context: "from-trunk",
-                                host: "10.0.0.10",
-                                port: 5060,
-                                auth: "goip_auth"
-                            }
-                        })];
-                case 9:
-                    _a.sent();
-                    return [4 /*yield*/, prisma.extensions.create({
-                            data: {
-                                context: "from-trunk",
-                                exten: "104",
-                                priority: 1,
-                                app: "Set",
-                                appdata: "no"
-                            }
                         })
+                        // await prisma.ps_registrations.create({
+                        // 	data: {
+                        // 		id: "goip_register",
+                        // 		auth_rejection_permanent: "no",
+                        // 		support_path: "no",
+                        // 		outbound_auth: "goip_16_2",
+                        // 		transport: "transport-udp",
+                        // 		endpoint: "10.0.0.10",
+                        // 		support_outbound: "yes"
+                        // 	}
+                        // })
+                        // await prisma.iaxfriends.create({
+                        // 	data: {
+                        // 		trunk: "yes",
+                        // 		name: "goip_16_2",
+                        // 		type: "peer",
+                        // 		secret: password,
+                        // 		context: "from-trunk",
+                        // 		host: "10.0.0.10",
+                        // 		port: 5060,
+                        // 		auth: "goip_16_2"
+                        // 	}
+                        // })
+                        // await prisma.extensions.create({
+                        // 	data: {
+                        // 		context: "from-trunk",
+                        // 		exten: "104",
+                        // 		priority: 1,
+                        // 		app: "Set",
+                        // 		appdata: "no"
+                        // 	}
+                        // })
                         // await prisma.sippeers.create({
                         // 	data: {
                         // 		name: "goip",

@@ -39,6 +39,9 @@ resource "kubernetes_deployment_v1" "asterisk" {
     namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
   }
   spec {
+    strategy {
+      type = "Recreate"
+    }
     template {
       metadata {
         labels = {
@@ -48,10 +51,11 @@ resource "kubernetes_deployment_v1" "asterisk" {
       spec {
         host_network = true
         container {
-          name    = "asterisk"
-          image   = "saveloy/asterisk:0.7.1"
-          command = ["/bin/sh", "-c"]
-          args    = ["odbcinst -i -d -f /etc/MariaDB_odbc_driver_template.ini ; odbcinst -i -s -l -f /etc/MariaDB_odbc_data_source_template.ini;asterisk"]
+          name        = "asterisk"
+          image       = "saveloy/asterisk:0.7.1"
+          working_dir = "/var/lib/asterisk/sounds"
+          command     = ["/bin/sh", "-c"]
+          args        = ["odbcinst -i -d -f /etc/MariaDB_odbc_driver_template.ini ; odbcinst -i -s -l -f /etc/MariaDB_odbc_data_source_template.ini;asterisk"]
           dynamic "port" {
             for_each = local.ports
             content {

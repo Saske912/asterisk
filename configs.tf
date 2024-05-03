@@ -100,7 +100,9 @@ EOT
 nofork=yes
 verbose = 5
 debug = 2
+languageprefix = yes
 documentation_language = ru
+dumpcore = yes
 EOT
     "pjsip.conf"        = <<EOT
 [global]
@@ -172,6 +174,10 @@ ps_aors => odbc,asterisk
 ps_domain_aliases => odbc,asterisk
 ps_endpoint_id_ips =>  odbc,asterisk
 ps_contacts => odbc,asterisk
+queues => odbc,asterisk,voice_queue
+queue_members => odbc,asterisk,voice_agenci
+extensions => odbc,asterisk,voice_dialplan
+sippeers => odbc,asterisk,voice_konta
 EOT
     "http.conf"         = <<EOT
 [general]
@@ -193,19 +199,22 @@ record = 425/250,0/250
 info = 950/330,1400/330,1800/330
 stutter = 350+440
 EOT
-    #     "extensions.conf"   = <<EOT
-    # [general]
-    # [globals]
-    # [sets]
-    # exten => 100,1,Dial(PJSIP/0000f30A0A01)
-    # exten => 101,1,Dial(PJSIP/0000f30B0B02)
-    # exten => 102,1,Dial(PJSIP/SOFTPHONE_A)
-    # exten => 103,1,Dial(PJSIP/SOFTPHONE_B)
-    # exten => 200,1,Answer()
-    #   same => n,Playback(hello-world)
-    #   same => n,Hangup()
-    # EOT
-    "rtp.conf" = <<EOT
+    "extensions.conf"   = <<EOT
+    [general]
+    [globals]
+    [default]
+    switch => Realtime/[[asterisk@]extensions]
+    exten => 103,1,Dial(PJSIP/103)
+    exten => 104,1,Dial(PJSIP/104)
+    exten => 200,1,Answer()
+      same => n,System(pwd)
+      same => n,Playback(ru/vm-sorry.wav)
+      same => n,Hangup()
+    exten => _+7XXXXXXXXXX,1,Dial(PJSIP/goip_16_2/$${EXTEN})
+    exten => _8XXXXXXXXXX,1,Dial(PJSIP/goip_16_2/$${EXTEN})
+    exten => _XXXXXXXXXXX,1,Dial(PJSIP/goip_16_2/$${EXTEN})
+    EOT
+    "rtp.conf"          = <<EOT
 [rtp_defaults]
 general
 rtpstart=10000
