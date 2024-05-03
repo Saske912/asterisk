@@ -7,1028 +7,1789 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model admin {
-  variable String @id @default("") @db.VarChar(20)
-  value    String @default("") @db.VarChar(80)
+model alembic_version_config {
+  version_num String @id @db.VarChar(32)
 }
 
-model ampusers {
-  username       String  @id @db.VarChar(190)
-  password_sha1  String  @db.VarChar(40)
-  extension_low  String  @default("") @db.VarChar(20)
-  extension_high String  @default("") @db.VarChar(20)
-  deptname       String  @default("") @db.VarChar(20)
-  sections       Bytes
-  email          String? @default("") @db.VarChar(40)
-  extension      String? @default("") @db.VarChar(40)
+model extensions {
+  id       BigInt @id @unique(map: "id") @default(autoincrement())
+  context  String @db.VarChar(40)
+  exten    String @db.VarChar(40)
+  priority Int
+  app      String @db.VarChar(40)
+  appdata  String @db.VarChar(256)
+
+  @@unique([context, exten, priority], map: "context")
 }
 
-model callrecording {
-  callrecording_id   Int     @id @default(autoincrement())
-  callrecording_mode String? @db.VarChar(50)
-  description        String? @db.VarChar(50)
-  dest               String? @db.VarChar(255)
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model callrecording_module {
-  extension     String? @db.VarChar(50)
-  cidnum        String? @default("") @db.VarChar(50)
-  callrecording String? @db.VarChar(10)
-  display       String? @db.VarChar(20)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model cdr {
-  calldate      DateTime @default(dbgenerated("('1000-01-01 00:00:00')")) @db.DateTime(0)
-  clid          String   @default("") @db.VarChar(80)
-  src           String   @default("") @db.VarChar(80)
-  dst           String   @default("") @db.VarChar(80)
-  dcontext      String   @default("") @db.VarChar(80)
-  channel       String   @default("") @db.VarChar(80)
-  dstchannel    String   @default("") @db.VarChar(80)
-  lastapp       String   @default("") @db.VarChar(80)
-  lastdata      String   @default("") @db.VarChar(80)
-  duration      Int      @default(0)
-  billsec       Int      @default(0)
-  disposition   String   @default("") @db.VarChar(45)
-  amaflags      Int      @default(0)
-  accountcode   String   @default("") @db.VarChar(20)
-  uniqueid      String   @default("") @db.VarChar(32)
-  userfield     String   @default("") @db.VarChar(255)
-  did           String   @default("") @db.VarChar(50)
-  recordingfile String   @default("") @db.VarChar(255)
-  cnum          String   @default("") @db.VarChar(80)
-  cnam          String   @default("") @db.VarChar(80)
-  outbound_cnum String   @default("") @db.VarChar(80)
-  outbound_cnam String   @default("") @db.VarChar(80)
-  dst_cnam      String   @default("") @db.VarChar(80)
-  linkedid      String   @default("") @db.VarChar(32)
-  peeraccount   String   @default("") @db.VarChar(80)
-  sequence      Int      @default(0)
-
-  @@index([accountcode], map: "accountcode")
-  @@index([calldate], map: "calldate")
-  @@index([did], map: "did")
-  @@index([dst], map: "dst")
-  @@index([recordingfile], map: "recordingfile")
-  @@index([uniqueid], map: "uniqueid")
-  @@ignore
-}
-
-model certman_cas {
-  uid        Int     @id @default(autoincrement())
-  basename   String  @unique(map: "basename") @db.VarChar(190)
-  cn         String  @db.VarChar(255)
-  on         String  @db.VarChar(255)
-  passphrase String? @db.VarChar(255)
-  salt       String? @db.VarChar(255)
-}
-
-model certman_certs {
-  cid         Int     @id @default(autoincrement())
-  caid        Int?
-  basename    String  @unique(map: "basename") @db.VarChar(190)
-  description String? @db.VarChar(255)
-  type        String  @default("ss") @db.VarChar(2)
-  default     Boolean @default(false)
-  additional  Bytes?
-}
-
-model certman_csrs {
-  cid      Int    @id @default(autoincrement())
-  basename String @unique(map: "basename") @db.VarChar(190)
-}
-
-model certman_mapping {
-  id                 String  @id @db.VarChar(20)
-  cid                Int?
-  verify             String? @db.VarChar(255)
-  setup              String? @db.VarChar(45)
-  rekey              Int?
-  auto_generate_cert Boolean @default(false)
-}
-
-model cron_jobs {
-  id              Int     @id @default(autoincrement()) @db.UnsignedInt
-  modulename      String  @default("") @db.VarChar(170)
-  jobname         String  @default("") @db.VarChar(170)
-  command         String? @db.LongText
-  class           String? @default("") @db.VarChar(255)
-  schedule        String  @default("") @db.VarChar(255)
-  max_runtime     Int     @default(30)
-  enabled         Boolean @default(true)
-  execution_order Int     @default(100)
-
-  @@unique([modulename, jobname], map: "modulename")
-}
-
-model cronmanager {
-  module   String  @default("") @db.VarChar(50)
-  id       String  @default("") @db.VarChar(24)
-  time     String? @db.VarChar(5)
-  freq     Int     @default(0)
-  lasttime Int     @default(0)
-  command  String  @default("") @db.VarChar(255)
-
-  @@id([module, id])
-}
-
-model dahdi {
-  id      String @default("-1") @db.VarChar(20)
-  keyword String @default("") @db.VarChar(30)
-  data    String @default("") @db.VarChar(255)
-  flags   Int    @default(0)
-
-  @@id([id, keyword])
-}
-
-model dahdichandids {
-  channel     Int    @id @default(0)
-  description String @default("") @db.VarChar(40)
-  did         String @default("") @db.VarChar(60)
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model devices {
-  id            String  @default("") @db.VarChar(20)
-  tech          String  @default("") @db.VarChar(10)
-  dial          String  @default("") @db.VarChar(255)
-  devicetype    String  @default("") @db.VarChar(5)
-  user          String? @db.VarChar(50)
-  description   String? @db.VarChar(50)
-  emergency_cid String? @db.VarChar(100)
-  hint_override String? @db.VarChar(100)
-
-  @@index([id], map: "id")
-  @@index([tech], map: "tech")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model emergencydevices {
-  id            String  @db.VarChar(20)
-  tech          String  @db.VarChar(10)
-  dial          String  @db.VarChar(255)
-  devicetype    String? @db.VarChar(10)
-  user          String? @db.VarChar(50)
-  description   String? @db.VarChar(100)
-  emergency_cid String? @db.VarChar(100)
-  hint_override String? @db.VarChar(100)
-
-  @@ignore
-}
-
-model featurecodes {
-  modulename  String  @default("") @db.VarChar(50)
-  featurename String  @default("") @db.VarChar(50)
-  description String  @default("") @db.VarChar(200)
-  helptext    String? @db.VarChar(10000)
-  defaultcode String? @db.VarChar(20)
-  customcode  String? @db.VarChar(20)
-  enabled     Boolean @default(false)
-  providedest Boolean @default(false)
-
-  @@id([modulename, featurename])
-  @@index([enabled], map: "enabled")
-}
-
-model fop2ButtonContext {
-  id_button  Int  @id
-  id_context Int?
-}
-
-model fop2GroupButton {
-  id         Int     @id @default(autoincrement())
-  context_id Int
-  group_name String? @db.VarChar(50)
-  id_button  Int
-}
-
-model fop2PermGroup {
-  id         Int     @id @default(autoincrement())
-  context_id Int
-  name       String? @db.VarChar(30)
-  id_group   Int?
-  name_group String? @db.VarChar(100)
-}
-
-model fop2UserContext {
-  id_user    Int  @id
-  id_context Int?
-}
-
-model fop2UserGroup {
-  id         Int    @id @default(autoincrement())
-  context_id Int
-  exten      String @db.VarChar(30)
-  id_group   Int
-
-  @@unique([exten, id_group, context_id], map: "uni")
-}
-
-model fop2UserPlugin {
-  id         Int     @id @default(autoincrement())
-  context_id Int
-  exten      String? @db.VarChar(30)
-  id_plugin  String? @db.VarChar(50)
-
-  @@unique([exten, id_plugin], map: "uni")
-}
-
-model fop2UserTemplate {
-  id          Int    @id @default(autoincrement())
-  context_id  Int
-  exten       String @db.VarChar(30)
-  id_template Int
-
-  @@unique([exten, id_template], map: "uni")
-}
-
-model fop2buttons {
-  id                 Int     @id @default(autoincrement())
-  context_id         Int
-  exclude            Int     @default(0)
-  sortorder          Int     @default(0)
-  type               String  @db.VarChar(40)
-  device             String  @db.VarChar(100)
-  privacy            String? @db.VarChar(30)
-  label              String? @db.VarChar(100)
-  group              String  @default("") @db.VarChar(60)
-  exten              String? @db.VarChar(30)
-  email              String  @default("") @db.VarChar(100)
-  context            String? @db.VarChar(100)
-  mailbox            String? @db.VarChar(100)
-  channel            String? @default("") @db.VarChar(200)
-  queuechannel       String? @db.Text
-  originatechannel   String? @default("") @db.VarChar(200)
-  customastdb        String? @default("") @db.VarChar(50)
-  spyoptions         String? @default("") @db.VarChar(100)
-  external           String? @default("") @db.VarChar(100)
-  accountcode        String? @default("") @db.VarChar(100)
-  tags               String? @default("") @db.VarChar(255)
-  extenvoicemail     String  @default("") @db.VarChar(200)
-  queuecontext       String  @default("") @db.VarChar(200)
-  server             String  @default("") @db.VarChar(100)
-  cssclass           String  @default("") @db.VarChar(200)
-  originatevariables String? @db.Text
-  autoanswerheader   String? @default("__SIPADDHEADER51=Call-Info: answer-after=0.001") @db.VarChar(255)
-  sip_username       String? @default("") @db.VarChar(255)
-  sip_password       String? @default("") @db.VarChar(255)
-
-  @@unique([context_id, device], map: "devname")
-}
-
-model fop2contexts {
-  id      Int     @id @default(autoincrement())
-  context String? @unique(map: "ctx") @db.VarChar(50)
-  name    String? @db.VarChar(100)
-  exclude Int     @default(0)
-}
-
-model fop2groups {
-  id         Int    @default(0)
-  context_id Int
-  name       String @db.VarChar(50)
-
-  @@unique([context_id, name], map: "contextname")
-  @@unique([id, context_id], map: "idcont")
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model fop2managerUserContext {
-  id_user    Int
-  id_context Int?
-
-  @@index([id_context], map: "te")
-  @@index([id_user], map: "us")
-  @@index([id_user, id_context], map: "uste")
-  @@ignore
-}
-
-model fop2manageracl {
-  id       Int     @id @default(autoincrement())
-  resource String? @unique(map: "byresource") @db.VarChar(50)
-  level    String? @db.VarChar(30)
-}
-
-model fop2managersecurelevel {
-  level  Int     @id @default(0)
-  detail String? @unique(map: "det") @db.VarChar(30)
-  icon   String? @db.VarChar(50)
-}
-
-model fop2managerusers {
-  id       Int     @id @default(autoincrement())
-  user     String? @unique(map: "name") @db.VarChar(50)
-  password String? @db.VarChar(100)
-  level    String? @db.VarChar(30)
-}
-
-model fop2permissions {
-  id          Int     @id @default(autoincrement())
-  context_id  Int
-  name        String? @db.VarChar(30)
-  permissions String? @db.VarChar(200)
-}
-
-model fop2plugins {
-  id          Int     @id @default(autoincrement())
-  rawname     String? @unique(map: "rname") @db.VarChar(50)
-  name        String? @db.VarChar(100)
-  version     String? @db.VarChar(10)
-  description String? @db.Text
-  global      Int?    @default(0)
-}
-
-model fop2recordings {
-  id              Int       @id @default(autoincrement())
-  uniqueid        String?   @unique(map: "uni") @db.VarChar(50)
-  datetime        DateTime? @db.DateTime(0)
-  ownerextension  String?   @db.VarChar(20)
-  targetextension String?   @db.VarChar(20)
-  filename        String?   @db.TinyText
-  duration        Int?      @default(0)
-  context         String?   @db.VarChar(200)
-}
-
-model fop2settings {
-  id      Int    @id @default(autoincrement())
-  keyword String @unique(map: "kw") @db.VarChar(250)
-  value   String @db.Text
-}
-
-model fop2setup {
-  id        Int     @id @default(autoincrement())
-  keyword   String  @db.VarChar(150)
-  parameter String? @default("") @db.VarChar(150)
-  value     String? @default("") @db.VarChar(150)
-
-  @@unique([keyword, parameter], map: "keypar")
-}
-
-model fop2templates {
-  id          Int     @id @default(autoincrement())
-  context_id  Int
-  name        String? @db.VarChar(30)
-  permissions String? @db.VarChar(200)
-  groups      String? @db.VarChar(200)
-  plugins     String? @db.VarChar(200)
-  custom      String? @db.Text
-  isdefault   Int?    @default(0)
-}
-
-model fop2users {
-  id          Int     @id @default(autoincrement())
-  context_id  Int
-  exten       String  @db.VarChar(30)
-  secret      String  @db.VarChar(20)
-  permissions String? @db.VarChar(200)
-
-  @@unique([exten, context_id], map: "extctx")
-}
-
-model freepbx_log {
-  id      Int      @id @default(autoincrement())
-  time    DateTime @db.DateTime(0)
-  section String?  @db.VarChar(50)
-  level   String   @default("error") @db.VarChar(150)
-  status  Int      @default(0)
-  message String   @db.LongText
-
-  @@index([time, level], map: "time")
-}
-
-model freepbx_settings {
-  keyword     String   @id @default("") @db.VarChar(50)
-  value       String?  @db.VarChar(255)
-  name        String?  @db.VarChar(80)
-  level       Boolean? @default(false)
-  description String?  @db.LongText
-  type        String?  @db.VarChar(25)
-  options     String?  @db.LongText
-  defaultval  String?  @db.VarChar(255)
-  readonly    Boolean? @default(false)
-  hidden      Boolean? @default(false)
-  category    String?  @db.VarChar(50)
-  module      String?  @db.VarChar(50)
-  emptyok     Boolean? @default(true)
-  sortorder   Int?     @default(0)
-}
-
-model globals {
-  variable String @id @db.VarChar(190)
-  value    String @db.VarChar(255)
-}
-
-model iax {
-  id      String @default("-1") @db.VarChar(20)
-  keyword String @default("") @db.VarChar(30)
-  data    String @db.VarChar(255)
-  flags   Int    @default(0)
-
-  @@id([id, keyword])
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model incoming {
-  cidnum          String?  @db.VarChar(50)
-  extension       String   @db.VarChar(50)
-  destination     String?  @db.VarChar(50)
-  privacyman      Boolean?
-  alertinfo       String?  @db.VarChar(255)
-  ringing         String?  @db.VarChar(20)
-  fanswer         String?  @db.VarChar(20)
-  mohclass        String   @default("default") @db.VarChar(80)
-  description     String?  @db.VarChar(80)
-  grppre          String?  @db.VarChar(80)
-  delay_answer    Int?
-  pricid          String?  @db.VarChar(20)
-  pmmaxretries    String?  @db.VarChar(2)
-  pmminlength     String?  @db.VarChar(2)
-  reversal        String?  @db.VarChar(10)
-  rvolume         String?  @default("") @db.VarChar(2)
-  indication_zone String?  @default("default") @db.VarChar(20)
-
-  @@ignore
-}
-
-model indications_zonelist {
-  iso  String @id @db.VarChar(20)
-  name String @db.VarChar(80)
-  conf Bytes?
-}
-
-model kvblobstore {
-  uuid    String  @id @db.Char(36)
-  type    String? @db.Char(32)
-  content Bytes?
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_Dashboard {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_Framework {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_Hooks {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_Media {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_modules_Cdr {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_modules_Conferences {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_modules_Core {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_modules_Filestore {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_modules_Userman {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_FreePBX_modules_Voicemail {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_OOBE {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model kvstore_Sipsettings {
-  key  String  @db.Char(255)
-  val  String? @db.VarChar(4096)
-  type String? @db.Char(16)
-  id   String? @db.Char(255)
-
-  @@unique([key(length: 190), id(length: 190)], map: "uniqueindex")
-  @@index([id(length: 190)], map: "idindex")
-  @@index([key(length: 190)], map: "keyindex")
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model language_incoming {
-  extension String? @db.VarChar(50)
-  cidnum    String? @db.VarChar(50)
-  language  String? @db.VarChar(10)
-
-  @@ignore
-}
-
-model languages {
-  language_id Int     @id @default(autoincrement())
-  lang_code   String? @db.VarChar(50)
-  description String? @db.VarChar(50)
-  dest        String? @db.VarChar(255)
-}
-
-model logfile_logfiles {
-  name      String  @id @default("") @db.VarChar(25)
-  permanent Boolean @default(false)
-  readonly  Boolean @default(false)
-  disabled  Boolean @default(false)
-  debug     String? @db.VarChar(25)
-  dtmf      String? @db.VarChar(25)
-  error     String? @db.VarChar(25)
-  fax       String? @db.VarChar(25)
-  notice    String? @db.VarChar(25)
-  verbose   String? @db.VarChar(25)
-  warning   String? @db.VarChar(25)
-  security  String? @db.VarChar(25)
-}
-
-model logfile_settings {
-  key   String  @id @default("") @db.VarChar(100)
-  value String? @db.VarChar(255)
+model iaxfriends {
+  id                Int                           @id @default(autoincrement())
+  name              String                        @unique(map: "name") @db.VarChar(40)
+  type              iaxfriends_type?
+  username          String?                       @db.VarChar(40)
+  mailbox           String?                       @db.VarChar(40)
+  secret            String?                       @db.VarChar(40)
+  dbsecret          String?                       @db.VarChar(40)
+  context           String?                       @db.VarChar(40)
+  regcontext        String?                       @db.VarChar(40)
+  host              String?                       @db.VarChar(40)
+  ipaddr            String?                       @db.VarChar(40)
+  port              Int?
+  defaultip         String?                       @db.VarChar(20)
+  sourceaddress     String?                       @db.VarChar(20)
+  mask              String?                       @db.VarChar(20)
+  regexten          String?                       @db.VarChar(40)
+  regseconds        Int?
+  accountcode       String?                       @db.VarChar(80)
+  mohinterpret      String?                       @db.VarChar(20)
+  mohsuggest        String?                       @db.VarChar(20)
+  inkeys            String?                       @db.VarChar(40)
+  outkeys           String?                       @db.VarChar(40)
+  language          String?                       @db.VarChar(10)
+  callerid          String?                       @db.VarChar(100)
+  cid_number        String?                       @db.VarChar(40)
+  sendani           iaxfriends_sendani?
+  fullname          String?                       @db.VarChar(40)
+  trunk             iaxfriends_trunk?
+  auth              String?                       @db.VarChar(20)
+  maxauthreq        Int?
+  requirecalltoken  iaxfriends_requirecalltoken?
+  encryption        iaxfriends_encryption?
+  transfer          iaxfriends_transfer?
+  jitterbuffer      iaxfriends_jitterbuffer?
+  forcejitterbuffer iaxfriends_forcejitterbuffer?
+  disallow          String?                       @db.VarChar(200)
+  allow             String?                       @db.VarChar(200)
+  codecpriority     String?                       @db.VarChar(40)
+  qualify           String?                       @db.VarChar(10)
+  qualifysmoothing  iaxfriends_qualifysmoothing?
+  qualifyfreqok     String?                       @db.VarChar(10)
+  qualifyfreqnotok  String?                       @db.VarChar(10)
+  timezone          String?                       @db.VarChar(20)
+  adsi              iaxfriends_adsi?
+  amaflags          String?                       @db.VarChar(20)
+  setvar            String?                       @db.VarChar(200)
+
+  @@index([host, port], map: "iaxfriends_host_port")
+  @@index([ipaddr, port], map: "iaxfriends_ipaddr_port")
+  @@index([name], map: "iaxfriends_name")
+  @@index([name, host], map: "iaxfriends_name_host")
+  @@index([name, ipaddr, port], map: "iaxfriends_name_ipaddr_port")
 }
 
 model meetme {
-  exten       String  @id @db.VarChar(50)
-  options     String? @db.VarChar(15)
-  userpin     String? @db.VarChar(50)
-  adminpin    String? @db.VarChar(50)
-  description String? @db.VarChar(50)
-  joinmsg_id  Int?
-  music       String? @db.VarChar(80)
-  users       Int?    @default(0) @db.UnsignedSmallInt
-  language    String  @default("") @db.VarChar(10)
-  timeout     Int?    @default(21600) @db.UnsignedInt
+  bookid            Int       @id @default(autoincrement())
+  confno            String    @db.VarChar(80)
+  starttime         DateTime? @db.DateTime(0)
+  endtime           DateTime? @db.DateTime(0)
+  pin               String?   @db.VarChar(20)
+  adminpin          String?   @db.VarChar(20)
+  opts              String?   @db.VarChar(20)
+  adminopts         String?   @db.VarChar(20)
+  recordingfilename String?   @db.VarChar(80)
+  recordingformat   String?   @db.VarChar(10)
+  maxusers          Int?
+  members           Int
+
+  @@index([confno, starttime, endtime], map: "meetme_confno_start_end")
 }
 
-model module_xml {
-  id   String @id @default("xml") @db.VarChar(20)
-  time Int    @default(0)
-  data Bytes?
+model musiconhold {
+  name              String              @id @db.VarChar(80)
+  mode              musiconhold_mode?
+  directory         String?             @db.VarChar(255)
+  application       String?             @db.VarChar(255)
+  digit             String?             @db.VarChar(1)
+  sort              String?             @db.VarChar(10)
+  format            String?             @db.VarChar(10)
+  stamp             DateTime?           @db.DateTime(0)
+  musiconhold_entry musiconhold_entry[]
 }
 
-model modules {
-  id         Int     @id @default(autoincrement())
-  modulename String  @default("") @db.VarChar(50)
-  version    String  @default("") @db.VarChar(20)
-  enabled    Boolean @default(false)
-  signature  Bytes?
+model musiconhold_entry {
+  name        String      @db.VarChar(80)
+  position    Int
+  entry       String      @db.VarChar(1024)
+  musiconhold musiconhold @relation(fields: [name], references: [name], onUpdate: Restrict, map: "fk_musiconhold_entry_name_musiconhold")
+
+  @@id([name, position])
 }
 
-model music {
-  id          Int      @id @default(autoincrement())
-  category    String?  @unique(map: "category_UNIQUE") @db.VarChar(190)
-  type        String?  @db.VarChar(100)
-  random      Boolean? @default(false)
-  application String?  @db.VarChar(255)
-  format      String?  @db.VarChar(10)
+model ps_aors {
+  id                   String                        @unique(map: "id") @db.VarChar(40)
+  contact              String?                       @db.VarChar(255)
+  default_expiration   Int?
+  mailboxes            String?                       @db.VarChar(80)
+  max_contacts         Int?
+  minimum_expiration   Int?
+  remove_existing      ps_aors_remove_existing?
+  qualify_frequency    Int?
+  authenticate_qualify ps_aors_authenticate_qualify?
+  maximum_expiration   Int?
+  outbound_proxy       String?                       @db.VarChar(40)
+  support_path         ps_aors_support_path?
+  qualify_timeout      Float?                        @db.Float
+  voicemail_extension  String?                       @db.VarChar(40)
+  remove_unavailable   ps_aors_remove_unavailable?
+
+  @@index([id], map: "ps_aors_id")
+  @@index([qualify_frequency, contact], map: "ps_aors_qualifyfreq_contact")
 }
 
-model notifications {
-  module        String  @default("") @db.VarChar(50)
-  id            String  @default("") @db.VarChar(24)
-  level         Int     @default(0)
-  display_text  String  @default("") @db.VarChar(255)
-  extended_text Bytes
-  link          String  @default("") @db.VarChar(255)
-  reset         Boolean @default(false)
-  candelete     Boolean @default(false)
-  timestamp     Int     @default(0)
+model ps_asterisk_publications {
+  id                   String                                  @unique(map: "id") @db.VarChar(40)
+  devicestate_publish  String?                                 @db.VarChar(40)
+  mailboxstate_publish String?                                 @db.VarChar(40)
+  device_state         ps_asterisk_publications_device_state?
+  device_state_filter  String?                                 @db.VarChar(256)
+  mailbox_state        ps_asterisk_publications_mailbox_state?
+  mailbox_state_filter String?                                 @db.VarChar(256)
 
-  @@id([module, id])
+  @@index([id], map: "ps_asterisk_publications_id")
 }
 
-model outbound_route_email {
-  route_id     Int     @id
-  emailfrom    String? @default("") @db.VarChar(320)
-  emailto      String? @default("") @db.VarChar(320)
-  emailsubject String? @db.LongText
-  emailbody    String? @db.LongText
-}
+model ps_auths {
+  id             String              @unique(map: "id") @db.VarChar(40)
+  auth_type      ps_auths_auth_type?
+  nonce_lifetime Int?
+  md5_cred       String?             @db.VarChar(40)
+  password       String?             @db.VarChar(80)
+  realm          String?             @db.VarChar(40)
+  username       String?             @db.VarChar(40)
+  refresh_token  String?             @db.VarChar(255)
+  oauth_clientid String?             @db.VarChar(255)
+  oauth_secret   String?             @db.VarChar(255)
 
-model outbound_route_patterns {
-  route_id             Int
-  match_pattern_prefix String @default("") @db.VarChar(60)
-  match_pattern_pass   String @default("") @db.VarChar(60)
-  match_cid            String @default("") @db.VarChar(60)
-  prepend_digits       String @default("") @db.VarChar(100)
-
-  @@id([route_id, match_pattern_prefix, match_pattern_pass, match_cid, prepend_digits])
-}
-
-model outbound_route_sequence {
-  route_id Int
-  seq      Int
-
-  @@id([route_id, seq])
-}
-
-model outbound_route_trunks {
-  route_id Int
-  trunk_id Int
-  seq      Int
-
-  @@id([route_id, trunk_id, seq])
-}
-
-model outbound_routes {
-  route_id           Int     @id @default(autoincrement())
-  name               String? @db.VarChar(40)
-  outcid             String? @db.VarChar(255)
-  outcid_mode        String? @db.VarChar(20)
-  password           String? @db.VarChar(30)
-  emergency_route    String? @db.VarChar(4)
-  intracompany_route String? @db.VarChar(4)
-  mohclass           String? @db.VarChar(80)
-  time_group_id      Int?
-  dest               String? @db.VarChar(255)
-  time_mode          String? @default("") @db.VarChar(20)
-  calendar_id        String? @db.VarChar(255)
-  calendar_group_id  String? @db.VarChar(255)
-  timezone           String? @db.VarChar(255)
-  notification_on    String? @default("call") @db.VarChar(255)
-}
-
-model pjsip {
-  id      String @default("-1") @db.VarChar(20)
-  keyword String @default("") @db.VarChar(30)
-  data    String @db.VarChar(8100)
-  flags   Int    @default(0)
-
-  @@id([id, keyword])
-}
-
-model recordings {
-  id          Int      @id @default(autoincrement())
-  displayname String?  @db.VarChar(50)
-  filename    Bytes?
-  description String?  @db.VarChar(254)
-  fcode       Boolean? @default(false)
-  fcode_pass  String?  @db.VarChar(20)
-  fcode_lang  String?  @db.VarChar(20)
-}
-
-model sip {
-  id      String @default("-1") @db.VarChar(20)
-  keyword String @default("") @db.VarChar(30)
-  data    String @db.VarChar(8100)
-  flags   Int    @default(0)
-
-  @@id([id, keyword])
-}
-
-model sipsettings {
-  keyword String  @default("") @db.VarChar(50)
-  seq     Boolean @default(false)
-  type    Boolean @default(false)
-  data    String  @default("") @db.VarChar(255)
-
-  @@id([keyword, seq, type])
-}
-
-model soundlang_customlangs {
-  id          Int    @id @default(autoincrement())
-  language    String @db.VarChar(20)
-  description String @db.VarChar(80)
-}
-
-model soundlang_packages {
-  id         BigInt  @id @unique(map: "id") @default(autoincrement())
-  type       String  @db.VarChar(20)
-  module     String  @db.VarChar(80)
-  language   String  @db.VarChar(20)
-  license    Bytes?
-  author     String? @db.VarChar(80)
-  authorlink String? @db.VarChar(256)
-  format     String  @db.VarChar(20)
-  version    String? @db.VarChar(20)
-  installed  String? @db.VarChar(20)
-
-  @@unique([type, module, language, format], map: "unique")
+  @@index([id], map: "ps_auths_id")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model soundlang_prompts {
-  type     String  @db.VarChar(20)
-  module   String  @db.VarChar(80)
-  language String  @db.VarChar(20)
-  format   String  @db.VarChar(20)
-  filename String? @db.VarChar(120)
+model ps_contacts {
+  id                   String?                           @unique(map: "id") @db.VarChar(255)
+  uri                  String?                           @db.VarChar(511)
+  expiration_time      BigInt?
+  qualify_frequency    Int?
+  outbound_proxy       String?                           @db.VarChar(40)
+  path                 String?                           @db.Text
+  user_agent           String?                           @db.VarChar(255)
+  qualify_timeout      Float?                            @db.Float
+  reg_server           String?                           @db.VarChar(255)
+  authenticate_qualify ps_contacts_authenticate_qualify?
+  via_addr             String?                           @db.VarChar(40)
+  via_port             Int?
+  call_id              String?                           @db.VarChar(255)
+  endpoint             String?                           @db.VarChar(40)
+  prune_on_boot        ps_contacts_prune_on_boot?
+
+  @@unique([id, reg_server], map: "ps_contacts_uq")
+  @@index([id], map: "ps_contacts_id")
+  @@index([qualify_frequency, expiration_time], map: "ps_contacts_qualifyfreq_exp")
+  @@ignore
+}
+
+model ps_domain_aliases {
+  id     String  @unique(map: "id") @db.VarChar(40)
+  domain String? @db.VarChar(80)
+
+  @@index([id], map: "ps_domain_aliases_id")
+}
+
+model ps_endpoint_id_ips {
+  id           String                          @unique(map: "id") @db.VarChar(40)
+  endpoint     String?                         @db.VarChar(40)
+  match        String?                         @db.VarChar(80)
+  srv_lookups  ps_endpoint_id_ips_srv_lookups?
+  match_header String?                         @db.VarChar(255)
+
+  @@index([id], map: "ps_endpoint_id_ips_id")
+}
+
+model ps_endpoints {
+  id                                 String                                           @unique(map: "id") @db.VarChar(40)
+  transport                          String?                                          @db.VarChar(40)
+  aors                               String?                                          @db.VarChar(200)
+  auth                               String?                                          @db.VarChar(40)
+  context                            String?                                          @db.VarChar(40)
+  disallow                           String?                                          @db.VarChar(200)
+  allow                              String?                                          @db.VarChar(200)
+  direct_media                       ps_endpoints_direct_media?
+  connected_line_method              ps_endpoints_connected_line_method?
+  direct_media_method                ps_endpoints_direct_media_method?
+  direct_media_glare_mitigation      ps_endpoints_direct_media_glare_mitigation?
+  disable_direct_media_on_nat        ps_endpoints_disable_direct_media_on_nat?
+  dtmf_mode                          ps_endpoints_dtmf_mode?
+  external_media_address             String?                                          @db.VarChar(40)
+  force_rport                        ps_endpoints_force_rport?
+  ice_support                        ps_endpoints_ice_support?
+  identify_by                        String?                                          @db.VarChar(80)
+  mailboxes                          String?                                          @db.VarChar(40)
+  moh_suggest                        String?                                          @db.VarChar(40)
+  outbound_auth                      String?                                          @db.VarChar(40)
+  outbound_proxy                     String?                                          @db.VarChar(40)
+  rewrite_contact                    ps_endpoints_rewrite_contact?
+  rtp_ipv6                           ps_endpoints_rtp_ipv6?
+  rtp_symmetric                      ps_endpoints_rtp_symmetric?
+  send_diversion                     ps_endpoints_send_diversion?
+  send_pai                           ps_endpoints_send_pai?
+  send_rpid                          ps_endpoints_send_rpid?
+  timers_min_se                      Int?
+  timers                             ps_endpoints_timers?
+  timers_sess_expires                Int?
+  callerid                           String?                                          @db.VarChar(40)
+  callerid_privacy                   ps_endpoints_callerid_privacy?
+  callerid_tag                       String?                                          @db.VarChar(40)
+  rel                                ps_endpoints_100rel?                             @map("100rel")
+  aggregate_mwi                      ps_endpoints_aggregate_mwi?
+  trust_id_inbound                   ps_endpoints_trust_id_inbound?
+  trust_id_outbound                  ps_endpoints_trust_id_outbound?
+  use_ptime                          ps_endpoints_use_ptime?
+  use_avpf                           ps_endpoints_use_avpf?
+  media_encryption                   ps_endpoints_media_encryption?
+  inband_progress                    ps_endpoints_inband_progress?
+  call_group                         String?                                          @db.VarChar(40)
+  pickup_group                       String?                                          @db.VarChar(40)
+  named_call_group                   String?                                          @db.VarChar(40)
+  named_pickup_group                 String?                                          @db.VarChar(40)
+  device_state_busy_at               Int?
+  fax_detect                         ps_endpoints_fax_detect?
+  t38_udptl                          ps_endpoints_t38_udptl?
+  t38_udptl_ec                       ps_endpoints_t38_udptl_ec?
+  t38_udptl_maxdatagram              Int?
+  t38_udptl_nat                      ps_endpoints_t38_udptl_nat?
+  t38_udptl_ipv6                     ps_endpoints_t38_udptl_ipv6?
+  tone_zone                          String?                                          @db.VarChar(40)
+  language                           String?                                          @db.VarChar(40)
+  one_touch_recording                ps_endpoints_one_touch_recording?
+  record_on_feature                  String?                                          @db.VarChar(40)
+  record_off_feature                 String?                                          @db.VarChar(40)
+  rtp_engine                         String?                                          @db.VarChar(40)
+  allow_transfer                     ps_endpoints_allow_transfer?
+  allow_subscribe                    ps_endpoints_allow_subscribe?
+  sdp_owner                          String?                                          @db.VarChar(40)
+  sdp_session                        String?                                          @db.VarChar(40)
+  tos_audio                          String?                                          @db.VarChar(10)
+  tos_video                          String?                                          @db.VarChar(10)
+  sub_min_expiry                     Int?
+  from_domain                        String?                                          @db.VarChar(40)
+  from_user                          String?                                          @db.VarChar(40)
+  mwi_from_user                      String?                                          @db.VarChar(40)
+  dtls_verify                        String?                                          @db.VarChar(40)
+  dtls_rekey                         String?                                          @db.VarChar(40)
+  dtls_cert_file                     String?                                          @db.VarChar(200)
+  dtls_private_key                   String?                                          @db.VarChar(200)
+  dtls_cipher                        String?                                          @db.VarChar(200)
+  dtls_ca_file                       String?                                          @db.VarChar(200)
+  dtls_ca_path                       String?                                          @db.VarChar(200)
+  dtls_setup                         ps_endpoints_dtls_setup?
+  srtp_tag_32                        ps_endpoints_srtp_tag_32?
+  media_address                      String?                                          @db.VarChar(40)
+  redirect_method                    ps_endpoints_redirect_method?
+  set_var                            String?                                          @db.Text
+  cos_audio                          Int?
+  cos_video                          Int?
+  message_context                    String?                                          @db.VarChar(40)
+  force_avp                          ps_endpoints_force_avp?
+  media_use_received_transport       ps_endpoints_media_use_received_transport?
+  accountcode                        String?                                          @db.VarChar(80)
+  user_eq_phone                      ps_endpoints_user_eq_phone?
+  moh_passthrough                    ps_endpoints_moh_passthrough?
+  media_encryption_optimistic        ps_endpoints_media_encryption_optimistic?
+  rpid_immediate                     ps_endpoints_rpid_immediate?
+  g726_non_standard                  ps_endpoints_g726_non_standard?
+  rtp_keepalive                      Int?
+  rtp_timeout                        Int?
+  rtp_timeout_hold                   Int?
+  bind_rtp_to_media_address          ps_endpoints_bind_rtp_to_media_address?
+  voicemail_extension                String?                                          @db.VarChar(40)
+  mwi_subscribe_replaces_unsolicited ps_endpoints_mwi_subscribe_replaces_unsolicited?
+  deny                               String?                                          @db.VarChar(95)
+  permit                             String?                                          @db.VarChar(95)
+  acl                                String?                                          @db.VarChar(40)
+  contact_deny                       String?                                          @db.VarChar(95)
+  contact_permit                     String?                                          @db.VarChar(95)
+  contact_acl                        String?                                          @db.VarChar(40)
+  subscribe_context                  String?                                          @db.VarChar(40)
+  fax_detect_timeout                 Int?
+  contact_user                       String?                                          @db.VarChar(80)
+  preferred_codec_only               ps_endpoints_preferred_codec_only?
+  asymmetric_rtp_codec               ps_endpoints_asymmetric_rtp_codec?
+  rtcp_mux                           ps_endpoints_rtcp_mux?
+  allow_overlap                      ps_endpoints_allow_overlap?
+  refer_blind_progress               ps_endpoints_refer_blind_progress?
+  notify_early_inuse_ringing         ps_endpoints_notify_early_inuse_ringing?
+  max_audio_streams                  Int?
+  max_video_streams                  Int?
+  webrtc                             ps_endpoints_webrtc?
+  dtls_fingerprint                   ps_endpoints_dtls_fingerprint?
+  incoming_mwi_mailbox               String?                                          @db.VarChar(40)
+  bundle                             ps_endpoints_bundle?
+  dtls_auto_generate_cert            ps_endpoints_dtls_auto_generate_cert?
+  follow_early_media_fork            ps_endpoints_follow_early_media_fork?
+  accept_multiple_sdp_answers        ps_endpoints_accept_multiple_sdp_answers?
+  suppress_q850_reason_headers       ps_endpoints_suppress_q850_reason_headers?
+  trust_connected_line               ps_endpoints_trust_connected_line?
+  send_connected_line                ps_endpoints_send_connected_line?
+  ignore_183_without_sdp             ps_endpoints_ignore_183_without_sdp?
+  codec_prefs_incoming_offer         String?                                          @db.VarChar(128)
+  codec_prefs_outgoing_offer         String?                                          @db.VarChar(128)
+  codec_prefs_incoming_answer        String?                                          @db.VarChar(128)
+  codec_prefs_outgoing_answer        String?                                          @db.VarChar(128)
+  stir_shaken                        ps_endpoints_stir_shaken?
+  send_history_info                  ps_endpoints_send_history_info?
+  allow_unauthenticated_options      ps_endpoints_allow_unauthenticated_options?
+  t38_bind_udptl_to_media_address    ps_endpoints_t38_bind_udptl_to_media_address?
+  geoloc_incoming_call_profile       String?                                          @db.VarChar(80)
+  geoloc_outgoing_call_profile       String?                                          @db.VarChar(80)
+  incoming_call_offer_pref           ps_endpoints_incoming_call_offer_pref?
+  outgoing_call_offer_pref           ps_endpoints_outgoing_call_offer_pref?
+  stir_shaken_profile                String?                                          @db.VarChar(80)
+  security_negotiation               ps_endpoints_security_negotiation?
+  security_mechanisms                String?                                          @db.VarChar(512)
+  send_aoc                           ps_endpoints_send_aoc?
+
+  @@index([id], map: "ps_endpoints_id")
+}
+
+model ps_globals {
+  id                                         String                                                 @unique(map: "id") @db.VarChar(40)
+  max_forwards                               Int?
+  user_agent                                 String?                                                @db.VarChar(255)
+  default_outbound_endpoint                  String?                                                @db.VarChar(40)
+  debug                                      String?                                                @db.VarChar(40)
+  endpoint_identifier_order                  String?                                                @db.VarChar(40)
+  max_initial_qualify_time                   Int?
+  default_from_user                          String?                                                @db.VarChar(80)
+  keep_alive_interval                        Int?
+  regcontext                                 String?                                                @db.VarChar(80)
+  contact_expiration_check_interval          Int?
+  default_voicemail_extension                String?                                                @db.VarChar(40)
+  disable_multi_domain                       ps_globals_disable_multi_domain?
+  unidentified_request_count                 Int?
+  unidentified_request_period                Int?
+  unidentified_request_prune_interval        Int?
+  default_realm                              String?                                                @db.VarChar(40)
+  mwi_tps_queue_high                         Int?
+  mwi_tps_queue_low                          Int?
+  mwi_disable_initial_unsolicited            ps_globals_mwi_disable_initial_unsolicited?
+  ignore_uri_user_options                    ps_globals_ignore_uri_user_options?
+  use_callerid_contact                       ps_globals_use_callerid_contact?
+  send_contact_status_on_update_registration ps_globals_send_contact_status_on_update_registration?
+  taskprocessor_overload_trigger             ps_globals_taskprocessor_overload_trigger?
+  norefersub                                 ps_globals_norefersub?
+  allow_sending_180_after_183                ps_globals_allow_sending_180_after_183?
+  all_codecs_on_empty_reinvite               ps_globals_all_codecs_on_empty_reinvite?
+
+  @@index([id], map: "ps_globals_id")
+}
+
+model ps_inbound_publications {
+  id                         String  @unique(map: "id") @db.VarChar(40)
+  endpoint                   String? @db.VarChar(40)
+  event_asterisk_devicestate String? @map("event_asterisk-devicestate") @db.VarChar(40)
+  event_asterisk_mwi         String? @map("event_asterisk-mwi") @db.VarChar(40)
+
+  @@index([id], map: "ps_inbound_publications_id")
+}
+
+model ps_outbound_publishes {
+  id                String                            @unique(map: "id") @db.VarChar(40)
+  expiration        Int?
+  outbound_auth     String?                           @db.VarChar(40)
+  outbound_proxy    String?                           @db.VarChar(256)
+  server_uri        String?                           @db.VarChar(256)
+  from_uri          String?                           @db.VarChar(256)
+  to_uri            String?                           @db.VarChar(256)
+  event             String?                           @db.VarChar(40)
+  max_auth_attempts Int?
+  transport         String?                           @db.VarChar(40)
+  multi_user        ps_outbound_publishes_multi_user?
+  body              String?                           @map("@body") @db.VarChar(40)
+  context           String?                           @map("@context") @db.VarChar(256)
+  exten             String?                           @map("@exten") @db.VarChar(256)
+
+  @@index([id], map: "ps_outbound_publishes_id")
+}
+
+model ps_registrations {
+  id                       String                                     @unique(map: "id") @db.VarChar(40)
+  auth_rejection_permanent ps_registrations_auth_rejection_permanent?
+  client_uri               String?                                    @db.VarChar(255)
+  contact_user             String?                                    @db.VarChar(40)
+  expiration               Int?
+  max_retries              Int?
+  outbound_auth            String?                                    @db.VarChar(40)
+  outbound_proxy           String?                                    @db.VarChar(40)
+  retry_interval           Int?
+  forbidden_retry_interval Int?
+  server_uri               String?                                    @db.VarChar(255)
+  transport                String?                                    @db.VarChar(40)
+  support_path             ps_registrations_support_path?
+  fatal_retry_interval     Int?
+  line                     ps_registrations_line?
+  endpoint                 String?                                    @db.VarChar(40)
+  support_outbound         ps_registrations_support_outbound?
+  contact_header_params    String?                                    @db.VarChar(255)
+  max_random_initial_delay Int?
+  security_negotiation     ps_registrations_security_negotiation?
+  security_mechanisms      String?                                    @db.VarChar(512)
+
+  @@index([id], map: "ps_registrations_id")
+}
+
+model ps_resource_list {
+  id                          String                                  @unique(map: "id") @db.VarChar(40)
+  list_item                   String?                                 @db.VarChar(2048)
+  event                       String?                                 @db.VarChar(40)
+  full_state                  ps_resource_list_full_state?
+  notification_batch_interval Int?
+  resource_display_name       ps_resource_list_resource_display_name?
+
+  @@index([id], map: "ps_resource_list_id")
+}
+
+model ps_subscription_persistence {
+  id            String                                     @unique(map: "id") @db.VarChar(40)
+  packet        String?                                    @db.VarChar(2048)
+  src_name      String?                                    @db.VarChar(128)
+  src_port      Int?
+  transport_key String?                                    @db.VarChar(64)
+  local_name    String?                                    @db.VarChar(128)
+  local_port    Int?
+  cseq          Int?
+  tag           String?                                    @db.VarChar(128)
+  endpoint      String?                                    @db.VarChar(40)
+  expires       Int?
+  contact_uri   String?                                    @db.VarChar(256)
+  prune_on_boot ps_subscription_persistence_prune_on_boot?
+
+  @@index([id], map: "ps_subscription_persistence_id")
+}
+
+model ps_systems {
+  id                          String                                  @unique(map: "id") @db.VarChar(40)
+  timer_t1                    Int?
+  timer_b                     Int?
+  compact_headers             ps_systems_compact_headers?
+  threadpool_initial_size     Int?
+  threadpool_auto_increment   Int?
+  threadpool_idle_timeout     Int?
+  threadpool_max_size         Int?
+  disable_tcp_switch          ps_systems_disable_tcp_switch?
+  follow_early_media_fork     ps_systems_follow_early_media_fork?
+  accept_multiple_sdp_answers ps_systems_accept_multiple_sdp_answers?
+  disable_rport               ps_systems_disable_rport?
+
+  @@index([id], map: "ps_systems_id")
+}
+
+model ps_transports {
+  id                         String                              @unique(map: "id") @db.VarChar(40)
+  async_operations           Int?
+  bind                       String?                             @db.VarChar(40)
+  ca_list_file               String?                             @db.VarChar(200)
+  cert_file                  String?                             @db.VarChar(200)
+  cipher                     String?                             @db.VarChar(200)
+  domain                     String?                             @db.VarChar(40)
+  external_media_address     String?                             @db.VarChar(40)
+  external_signaling_address String?                             @db.VarChar(40)
+  external_signaling_port    Int?
+  method                     ps_transports_method?
+  local_net                  String?                             @db.VarChar(40)
+  password                   String?                             @db.VarChar(40)
+  priv_key_file              String?                             @db.VarChar(200)
+  protocol                   ps_transports_protocol?
+  require_client_cert        ps_transports_require_client_cert?
+  verify_client              ps_transports_verify_client?
+  verify_server              ps_transports_verify_server?
+  tos                        String?                             @db.VarChar(10)
+  cos                        Int?
+  allow_reload               ps_transports_allow_reload?
+  symmetric_transport        ps_transports_symmetric_transport?
+  allow_wildcard_certs       ps_transports_allow_wildcard_certs?
+
+  @@index([id], map: "ps_transports_id")
+}
+
+model queue_members {
+  queue_name      String                   @db.VarChar(80)
+  interface       String                   @db.VarChar(80)
+  membername      String?                  @db.VarChar(80)
+  state_interface String?                  @db.VarChar(80)
+  penalty         Int?
+  paused          Int?
+  uniqueid        Int                      @unique(map: "uniqueid") @default(autoincrement())
+  wrapuptime      Int?
+  ringinuse       queue_members_ringinuse?
+
+  @@id([queue_name, interface])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model queue_rules {
+  rule_name   String @db.VarChar(80)
+  time        String @db.VarChar(32)
+  min_penalty String @db.VarChar(32)
+  max_penalty String @db.VarChar(32)
 
   @@ignore
 }
 
-model soundlang_settings {
-  keyword String @id @db.VarChar(20)
-  value   String @db.VarChar(80)
+model queues {
+  name                        String                             @id @db.VarChar(128)
+  musiconhold                 String?                            @db.VarChar(128)
+  announce                    String?                            @db.VarChar(128)
+  context                     String?                            @db.VarChar(128)
+  timeout                     Int?
+  ringinuse                   queues_ringinuse?
+  setinterfacevar             queues_setinterfacevar?
+  setqueuevar                 queues_setqueuevar?
+  setqueueentryvar            queues_setqueueentryvar?
+  monitor_format              String?                            @db.VarChar(8)
+  membermacro                 String?                            @db.VarChar(512)
+  membergosub                 String?                            @db.VarChar(512)
+  queue_youarenext            String?                            @db.VarChar(128)
+  queue_thereare              String?                            @db.VarChar(128)
+  queue_callswaiting          String?                            @db.VarChar(128)
+  queue_quantity1             String?                            @db.VarChar(128)
+  queue_quantity2             String?                            @db.VarChar(128)
+  queue_holdtime              String?                            @db.VarChar(128)
+  queue_minutes               String?                            @db.VarChar(128)
+  queue_minute                String?                            @db.VarChar(128)
+  queue_seconds               String?                            @db.VarChar(128)
+  queue_thankyou              String?                            @db.VarChar(128)
+  queue_callerannounce        String?                            @db.VarChar(128)
+  queue_reporthold            String?                            @db.VarChar(128)
+  announce_frequency          Int?
+  announce_to_first_user      queues_announce_to_first_user?
+  min_announce_frequency      Int?
+  announce_round_seconds      Int?
+  announce_holdtime           String?                            @db.VarChar(128)
+  announce_position           String?                            @db.VarChar(128)
+  announce_position_limit     Int?
+  periodic_announce           String?                            @db.VarChar(50)
+  periodic_announce_frequency Int?
+  relative_periodic_announce  queues_relative_periodic_announce?
+  random_periodic_announce    queues_random_periodic_announce?
+  retry                       Int?
+  wrapuptime                  Int?
+  penaltymemberslimit         Int?
+  autofill                    queues_autofill?
+  monitor_type                String?                            @db.VarChar(128)
+  autopause                   queues_autopause?
+  autopausedelay              Int?
+  autopausebusy               queues_autopausebusy?
+  autopauseunavail            queues_autopauseunavail?
+  maxlen                      Int?
+  servicelevel                Int?
+  strategy                    queues_strategy?
+  joinempty                   String?                            @db.VarChar(128)
+  leavewhenempty              String?                            @db.VarChar(128)
+  reportholdtime              queues_reportholdtime?
+  memberdelay                 Int?
+  weight                      Int?
+  timeoutrestart              queues_timeoutrestart?
+  defaultrule                 String?                            @db.VarChar(128)
+  timeoutpriority             String?                            @db.VarChar(128)
 }
 
-model trunk_dialpatterns {
-  trunkid              Int    @default(0)
-  match_pattern_prefix String @default("") @db.VarChar(50)
-  match_pattern_pass   String @default("") @db.VarChar(50)
-  prepend_digits       String @default("") @db.VarChar(50)
-  seq                  Int    @default(0)
+model sippeers {
+  id                 Int                         @id @default(autoincrement())
+  name               String                      @unique(map: "name") @db.VarChar(40)
+  ipaddr             String?                     @db.VarChar(45)
+  port               Int?
+  regseconds         Int?
+  defaultuser        String?                     @db.VarChar(40)
+  fullcontact        String?                     @db.VarChar(80)
+  regserver          String?                     @db.VarChar(20)
+  useragent          String?                     @db.VarChar(255)
+  lastms             Int?
+  host               String?                     @db.VarChar(40)
+  type               sippeers_type?
+  context            String?                     @db.VarChar(40)
+  permit             String?                     @db.VarChar(95)
+  deny               String?                     @db.VarChar(95)
+  secret             String?                     @db.VarChar(40)
+  md5secret          String?                     @db.VarChar(40)
+  remotesecret       String?                     @db.VarChar(40)
+  transport          sippeers_transport?
+  dtmfmode           sippeers_dtmfmode?
+  directmedia        sippeers_directmedia?
+  nat                String?                     @db.VarChar(29)
+  callgroup          String?                     @db.VarChar(40)
+  pickupgroup        String?                     @db.VarChar(40)
+  language           String?                     @db.VarChar(40)
+  disallow           String?                     @db.VarChar(200)
+  allow              String?                     @db.VarChar(200)
+  insecure           String?                     @db.VarChar(40)
+  trustrpid          sippeers_trustrpid?
+  progressinband     sippeers_progressinband?
+  promiscredir       sippeers_promiscredir?
+  useclientcode      sippeers_useclientcode?
+  accountcode        String?                     @db.VarChar(80)
+  setvar             String?                     @db.VarChar(200)
+  callerid           String?                     @db.VarChar(40)
+  amaflags           String?                     @db.VarChar(40)
+  callcounter        sippeers_callcounter?
+  busylevel          Int?
+  allowoverlap       sippeers_allowoverlap?
+  allowsubscribe     sippeers_allowsubscribe?
+  videosupport       sippeers_videosupport?
+  maxcallbitrate     Int?
+  rfc2833compensate  sippeers_rfc2833compensate?
+  mailbox            String?                     @db.VarChar(40)
+  session_timers     sippeers_session_timers?    @map("session-timers")
+  session_expires    Int?                        @map("session-expires")
+  session_minse      Int?                        @map("session-minse")
+  session_refresher  sippeers_session_refresher? @map("session-refresher")
+  t38pt_usertpsource String?                     @db.VarChar(40)
+  regexten           String?                     @db.VarChar(40)
+  fromdomain         String?                     @db.VarChar(40)
+  fromuser           String?                     @db.VarChar(40)
+  qualify            String?                     @db.VarChar(40)
+  defaultip          String?                     @db.VarChar(45)
+  rtptimeout         Int?
+  rtpholdtimeout     Int?
+  sendrpid           sippeers_sendrpid?
+  outboundproxy      String?                     @db.VarChar(40)
+  callbackextension  String?                     @db.VarChar(40)
+  timert1            Int?
+  timerb             Int?
+  qualifyfreq        Int?
+  constantssrc       sippeers_constantssrc?
+  contactpermit      String?                     @db.VarChar(95)
+  contactdeny        String?                     @db.VarChar(95)
+  usereqphone        sippeers_usereqphone?
+  textsupport        sippeers_textsupport?
+  faxdetect          sippeers_faxdetect?
+  buggymwi           sippeers_buggymwi?
+  auth               String?                     @db.VarChar(40)
+  fullname           String?                     @db.VarChar(40)
+  trunkname          String?                     @db.VarChar(40)
+  cid_number         String?                     @db.VarChar(40)
+  callingpres        sippeers_callingpres?
+  mohinterpret       String?                     @db.VarChar(40)
+  mohsuggest         String?                     @db.VarChar(40)
+  parkinglot         String?                     @db.VarChar(40)
+  hasvoicemail       sippeers_hasvoicemail?
+  subscribemwi       sippeers_subscribemwi?
+  vmexten            String?                     @db.VarChar(40)
+  autoframing        sippeers_autoframing?
+  rtpkeepalive       Int?
+  call_limit         Int?                        @map("call-limit")
+  g726nonstandard    sippeers_g726nonstandard?
+  ignoresdpversion   sippeers_ignoresdpversion?
+  allowtransfer      sippeers_allowtransfer?
+  dynamic            sippeers_dynamic?
+  path               String?                     @db.VarChar(256)
+  supportpath        sippeers_supportpath?
 
-  @@id([trunkid, match_pattern_prefix, match_pattern_pass, prepend_digits, seq])
+  @@index([host, port], map: "sippeers_host_port")
+  @@index([ipaddr, port], map: "sippeers_ipaddr_port")
+  @@index([name], map: "sippeers_name")
+  @@index([name, host], map: "sippeers_name_host")
 }
 
-model trunks {
-  trunkid       Int     @default(0)
-  tech          String  @db.VarChar(20)
-  channelid     String  @default("") @db.VarChar(190)
-  name          String  @default("") @db.VarChar(50)
-  outcid        String  @default("") @db.VarChar(40)
-  keepcid       String? @default("off") @db.VarChar(4)
-  maxchans      String? @default("") @db.VarChar(6)
-  failscript    String  @default("") @db.VarChar(255)
-  dialoutprefix String  @default("") @db.VarChar(255)
-  usercontext   String? @db.VarChar(255)
-  provider      String? @db.VarChar(40)
-  disabled      String? @default("off") @db.VarChar(4)
-  continue      String? @default("off") @db.VarChar(4)
-  routedisplay  String? @default("on") @db.VarChar(4)
+model voicemail {
+  uniqueid        Int                        @id @default(autoincrement())
+  context         String                     @db.VarChar(80)
+  mailbox         String                     @db.VarChar(80)
+  password        String                     @db.VarChar(80)
+  fullname        String?                    @db.VarChar(80)
+  alias           String?                    @db.VarChar(80)
+  email           String?                    @db.VarChar(80)
+  pager           String?                    @db.VarChar(80)
+  attach          voicemail_attach?
+  attachfmt       String?                    @db.VarChar(10)
+  serveremail     String?                    @db.VarChar(80)
+  language        String?                    @db.VarChar(20)
+  tz              String?                    @db.VarChar(30)
+  deletevoicemail voicemail_deletevoicemail?
+  saycid          voicemail_saycid?
+  sendvoicemail   voicemail_sendvoicemail?
+  review          voicemail_review?
+  tempgreetwarn   voicemail_tempgreetwarn?
+  operator        voicemail_operator?
+  envelope        voicemail_envelope?
+  sayduration     Int?
+  forcename       voicemail_forcename?
+  forcegreetings  voicemail_forcegreetings?
+  callback        String?                    @db.VarChar(80)
+  dialout         String?                    @db.VarChar(80)
+  exitcontext     String?                    @db.VarChar(80)
+  maxmsg          Int?
+  volgain         Decimal?                   @db.Decimal(5, 2)
+  imapuser        String?                    @db.VarChar(80)
+  imappassword    String?                    @db.VarChar(80)
+  imapserver      String?                    @db.VarChar(80)
+  imapport        String?                    @db.VarChar(8)
+  imapflags       String?                    @db.VarChar(80)
+  stamp           DateTime?                  @db.DateTime(0)
 
-  @@id([trunkid, tech, channelid])
+  @@index([context], map: "voicemail_context")
+  @@index([imapuser], map: "voicemail_imapuser")
+  @@index([mailbox], map: "voicemail_mailbox")
+  @@index([mailbox, context], map: "voicemail_mailbox_context")
 }
 
-model ucp_sessions {
-  session  String  @id @unique(map: "session_UNIQUE") @db.VarChar(190)
-  uid      Int?
-  address  String? @db.VarChar(255)
-  time     Int?
-  socketid String? @db.VarChar(255)
+enum musiconhold_mode {
+  custom
+  files
+  mp3nb
+  quietmp3nb
+  quietmp3
+  playlist
 }
 
-model userman_call_activity_groups {
-  id          Int     @id @default(autoincrement())
-  groupname   String? @db.VarChar(150)
-  description String? @db.VarChar(255)
+enum ps_auths_auth_type {
+  md5
+  userpass
+  google_oauth
 }
 
-model userman_call_activity_users {
-  id         Int    @id @default(autoincrement())
-  uid        String @default("") @db.VarChar(40)
-  act_grp_id String @default("") @db.VarChar(40)
-
-  @@unique([uid, act_grp_id], map: "call_act_gid_uid_unique")
-  @@index([act_grp_id], map: "call_act_gid_idx")
-  @@index([uid], map: "call_act_uid_idx")
+enum ps_registrations_auth_rejection_permanent {
+  yes
+  no
 }
 
-model userman_directories {
-  id      Int     @id @default(autoincrement())
-  name    String? @db.VarChar(250)
-  driver  String  @default("") @db.VarChar(150)
-  active  Boolean @default(false)
-  order   Int     @default(5)
-  default Boolean @default(false)
-  locked  Boolean @default(false)
+enum iaxfriends_type {
+  friend
+  user
+  peer
 }
 
-model userman_groups {
-  id             Int     @id @default(autoincrement())
-  auth           String? @default("freepbx") @db.VarChar(150)
-  authid         String? @db.VarChar(750)
-  groupname      String? @db.VarChar(150)
-  description    String? @db.VarChar(255)
-  language       String? @db.VarChar(100)
-  timezone       String? @db.VarChar(100)
-  dateformat     String? @db.VarChar(100)
-  timeformat     String? @db.VarChar(100)
-  datetimeformat String? @db.VarChar(100)
-  priority       Int     @default(5)
-  users          Bytes?
-  permissions    Bytes?
-  local          Int     @default(0)
-
-  @@unique([groupname, auth], map: "groupname_UNIQUE")
+enum ps_asterisk_publications_device_state {
+  yes
+  no
 }
 
-model userman_groups_settings {
-  gid    Int
-  module String  @db.VarChar(65)
-  key    String  @db.VarChar(190)
-  val    Bytes
-  type   String? @db.VarChar(16)
-
-  @@unique([gid, module, key], map: "index4")
-  @@index([gid, key], map: "index2")
-  @@index([module, gid], map: "index6")
+enum ps_endpoint_id_ips_srv_lookups {
+  yes
+  no
 }
 
-model userman_template_settings {
-  tid    Int
-  module String  @db.VarChar(65)
-  key    String  @db.VarChar(190)
-  val    Bytes
-  type   String? @db.VarChar(16)
-
-  @@unique([tid, module, key], map: "index4")
-  @@index([tid, key], map: "index2")
-  @@index([module, tid], map: "index6")
+enum ps_resource_list_full_state {
+  yes
+  no
 }
 
-model userman_ucp_templates {
-  id                Int     @id @default(autoincrement())
-  templatename      String  @db.VarChar(150)
-  description       String? @db.VarChar(255)
-  importedfromuname String? @db.VarChar(255)
-  importedfromuid   String? @db.VarChar(255)
-  defaultexten      String? @db.VarChar(255)
-  hasupdated        Boolean @default(false)
+enum ps_systems_compact_headers {
+  yes
+  no
 }
 
-model userman_users {
-  id                Int     @id @default(autoincrement())
-  auth              String? @default("freepbx") @db.VarChar(150)
-  authid            String? @db.VarChar(750)
-  username          String? @db.VarChar(150)
-  description       String? @db.VarChar(255)
-  password          String? @db.VarChar(255)
-  default_extension String  @default("none") @db.VarChar(45)
-  primary_group     Int?
-  permissions       Bytes?
-  fname             String? @db.VarChar(100)
-  lname             String? @db.VarChar(100)
-  displayname       String? @db.VarChar(200)
-  title             String? @db.VarChar(100)
-  company           String? @db.VarChar(100)
-  department        String? @db.VarChar(100)
-  language          String? @db.VarChar(100)
-  timezone          String? @db.VarChar(100)
-  dateformat        String? @db.VarChar(100)
-  timeformat        String? @db.VarChar(100)
-  datetimeformat    String? @db.VarChar(100)
-  email             String? @db.LongText
-  cell              String? @db.VarChar(100)
-  work              String? @db.VarChar(100)
-  home              String? @db.VarChar(100)
-  fax               String? @db.VarChar(100)
-
-  @@unique([username, auth], map: "username_UNIQUE")
+enum ps_asterisk_publications_mailbox_state {
+  yes
+  no
 }
 
-model userman_users_settings {
-  uid    Int
-  module String  @db.VarChar(65)
-  key    String  @db.VarChar(190)
-  val    Bytes
-  type   String? @db.VarChar(16)
-
-  @@unique([uid, module, key], map: "index4")
-  @@index([uid, key], map: "index2")
-  @@index([module, uid], map: "index6")
+enum queues_ringinuse {
+  yes
+  no
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model users {
-  extension        String  @default("") @db.VarChar(20)
-  password         String? @db.VarChar(20)
-  name             String? @db.VarChar(50)
-  voicemail        String? @db.VarChar(50)
-  ringtimer        Int?
-  noanswer         String? @db.VarChar(100)
-  recording        String? @db.VarChar(50)
-  outboundcid      String? @db.VarChar(50)
-  sipname          String? @db.VarChar(50)
-  noanswer_cid     String  @default("") @db.VarChar(20)
-  busy_cid         String  @default("") @db.VarChar(20)
-  chanunavail_cid  String  @default("") @db.VarChar(20)
-  noanswer_dest    String  @default("") @db.VarChar(255)
-  busy_dest        String  @default("") @db.VarChar(255)
-  chanunavail_dest String  @default("") @db.VarChar(255)
-  mohclass         String? @default("default") @db.VarChar(80)
-
-  @@index([extension], map: "extension")
-  @@ignore
+enum ps_aors_remove_existing {
+  yes
+  no
 }
 
-model voicemail_admin {
-  variable String @id @default("") @db.VarChar(30)
-  value    String @default("") @db.VarChar(80)
+enum queues_setinterfacevar {
+  yes
+  no
+}
+
+enum ps_endpoints_direct_media {
+  yes
+  no
+}
+
+enum queues_setqueuevar {
+  yes
+  no
+}
+
+enum ps_aors_authenticate_qualify {
+  yes
+  no
+}
+
+enum ps_endpoints_connected_line_method {
+  invite
+  reinvite
+  update
+}
+
+enum ps_systems_disable_tcp_switch {
+  yes
+  no
+}
+
+enum queues_setqueueentryvar {
+  yes
+  no
+}
+
+enum voicemail_attach {
+  yes
+  no
+}
+
+enum ps_contacts_authenticate_qualify {
+  yes
+  no
+}
+
+enum ps_endpoints_direct_media_method {
+  invite
+  reinvite
+  update
+}
+
+enum ps_systems_follow_early_media_fork {
+  yes
+  no
+}
+
+enum ps_endpoints_direct_media_glare_mitigation {
+  none
+  outgoing
+  incoming
+}
+
+enum ps_outbound_publishes_multi_user {
+  yes
+  no
+}
+
+enum ps_systems_accept_multiple_sdp_answers {
+  yes
+  no
+}
+
+enum ps_transports_method {
+  default
+  unspecified
+  tlsv1
+  sslv2
+  sslv3
+  sslv23
+}
+
+enum ps_aors_support_path {
+  yes
+  no
+}
+
+enum ps_endpoints_disable_direct_media_on_nat {
+  yes
+  no
+}
+
+enum sippeers_type {
+  friend
+  user
+  peer
+}
+
+enum ps_endpoints_dtmf_mode {
+  rfc4733
+  inband
+  info
+  auto
+  auto_info
+}
+
+enum ps_globals_disable_multi_domain {
+  yes
+  no
+}
+
+enum ps_registrations_support_path {
+  yes
+  no
+}
+
+enum ps_subscription_persistence_prune_on_boot {
+  yes
+  no
+}
+
+enum voicemail_deletevoicemail {
+  yes
+  no
+}
+
+enum ps_contacts_prune_on_boot {
+  yes
+  no
+}
+
+enum ps_endpoints_force_rport {
+  yes
+  no
+}
+
+enum ps_registrations_line {
+  yes
+  no
+}
+
+enum ps_transports_protocol {
+  udp
+  tcp
+  tls
+  ws
+  wss
+  flow
+}
+
+enum voicemail_saycid {
+  yes
+  no
+}
+
+enum ps_endpoints_ice_support {
+  yes
+  no
+}
+
+enum ps_transports_require_client_cert {
+  yes
+  no
+}
+
+enum voicemail_sendvoicemail {
+  yes
+  no
+}
+
+enum ps_transports_verify_client {
+  yes
+  no
+}
+
+enum voicemail_review {
+  yes
+  no
+}
+
+enum ps_transports_verify_server {
+  yes
+  no
+}
+
+enum voicemail_tempgreetwarn {
+  yes
+  no
+}
+
+enum voicemail_operator {
+  yes
+  no
+}
+
+enum ps_globals_mwi_disable_initial_unsolicited {
+  yes
+  no
+}
+
+enum ps_registrations_security_negotiation {
+  no
+  mediasec
+}
+
+enum sippeers_dtmfmode {
+  rfc2833
+  info
+  shortinfo
+  inband
+  auto
+}
+
+enum voicemail_envelope {
+  yes
+  no
+}
+
+enum ps_globals_ignore_uri_user_options {
+  yes
+  no
+}
+
+enum ps_transports_allow_reload {
+  yes
+  no
+}
+
+enum sippeers_directmedia {
+  yes
+  no
+  nonat
+  update
+  outgoing
+}
+
+enum ps_endpoints_rewrite_contact {
+  yes
+  no
+}
+
+enum ps_transports_symmetric_transport {
+  yes
+  no
+}
+
+enum voicemail_forcename {
+  yes
+  no
+}
+
+enum ps_endpoints_rtp_ipv6 {
+  yes
+  no
+}
+
+enum ps_transports_allow_wildcard_certs {
+  yes
+  no
+}
+
+enum voicemail_forcegreetings {
+  yes
+  no
+}
+
+enum ps_endpoints_rtp_symmetric {
+  yes
+  no
+}
+
+enum ps_globals_taskprocessor_overload_trigger {
+  none
+  global
+  pjsip_only
+}
+
+enum ps_endpoints_send_diversion {
+  yes
+  no
+}
+
+enum iaxfriends_sendani {
+  yes
+  no
+}
+
+enum ps_endpoints_send_pai {
+  yes
+  no
+}
+
+enum queues_announce_to_first_user {
+  yes
+  no
+}
+
+enum ps_endpoints_send_rpid {
+  yes
+  no
+}
+
+enum iaxfriends_trunk {
+  yes
+  no
+}
+
+enum ps_endpoints_timers {
+  forced
+  no
+  required
+  yes
+}
+
+enum sippeers_trustrpid {
+  yes
+  no
+}
+
+enum sippeers_progressinband {
+  yes
+  no
+  never
+}
+
+enum iaxfriends_requirecalltoken {
+  yes
+  no
+  auto
+}
+
+enum sippeers_promiscredir {
+  yes
+  no
+}
+
+enum iaxfriends_encryption {
+  yes
+  no
+  aes128
+}
+
+enum ps_endpoints_callerid_privacy {
+  allowed_not_screened
+  allowed_passed_screened
+  allowed_failed_screened
+  allowed
+  prohib_not_screened
+  prohib_passed_screened
+  prohib_failed_screened
+  prohib
+  unavailable
+}
+
+enum sippeers_useclientcode {
+  yes
+  no
+}
+
+enum iaxfriends_transfer {
+  yes
+  no
+  mediaonly
+}
+
+enum iaxfriends_jitterbuffer {
+  yes
+  no
+}
+
+enum ps_endpoints_100rel {
+  no
+  required
+  peer_supported
+  yes
+}
+
+enum queues_relative_periodic_announce {
+  yes
+  no
+}
+
+enum iaxfriends_forcejitterbuffer {
+  yes
+  no
+}
+
+enum ps_endpoints_aggregate_mwi {
+  yes
+  no
+}
+
+enum queues_random_periodic_announce {
+  yes
+  no
+}
+
+enum ps_endpoints_trust_id_inbound {
+  yes
+  no
+}
+
+enum ps_endpoints_trust_id_outbound {
+  yes
+  no
+}
+
+enum sippeers_callcounter {
+  yes
+  no
+}
+
+enum ps_endpoints_use_ptime {
+  yes
+  no
+}
+
+enum ps_endpoints_use_avpf {
+  yes
+  no
+}
+
+enum queues_autofill {
+  yes
+  no
+}
+
+enum sippeers_allowoverlap {
+  yes
+  no
+}
+
+enum iaxfriends_qualifysmoothing {
+  yes
+  no
+}
+
+enum ps_endpoints_media_encryption {
+  no
+  sdes
+  dtls
+}
+
+enum sippeers_allowsubscribe {
+  yes
+  no
+}
+
+enum ps_endpoints_inband_progress {
+  yes
+  no
+}
+
+enum queues_autopause {
+  yes
+  no
+  all
+}
+
+enum sippeers_videosupport {
+  yes
+  no
+}
+
+enum queues_autopausebusy {
+  yes
+  no
+}
+
+enum sippeers_rfc2833compensate {
+  yes
+  no
+}
+
+enum iaxfriends_adsi {
+  yes
+  no
+}
+
+enum queues_autopauseunavail {
+  yes
+  no
+}
+
+enum sippeers_session_timers {
+  accept
+  refuse
+  originate
+
+  @@map("sippeers_session-timers")
+}
+
+enum ps_endpoints_fax_detect {
+  yes
+  no
+}
+
+enum queues_strategy {
+  ringall
+  leastrecent
+  fewestcalls
+  random
+  rrmemory
+  linear
+  wrandom
+  rrordered
+}
+
+enum ps_endpoints_t38_udptl {
+  yes
+  no
+}
+
+enum sippeers_session_refresher {
+  uac
+  uas
+
+  @@map("sippeers_session-refresher")
+}
+
+enum ps_endpoints_t38_udptl_ec {
+  none
+  fec
+  redundancy
+}
+
+enum queues_reportholdtime {
+  yes
+  no
+}
+
+enum ps_endpoints_t38_udptl_nat {
+  yes
+  no
+}
+
+enum ps_endpoints_t38_udptl_ipv6 {
+  yes
+  no
+}
+
+enum queues_timeoutrestart {
+  yes
+  no
+}
+
+enum ps_endpoints_one_touch_recording {
+  yes
+  no
+}
+
+enum sippeers_sendrpid {
+  yes
+  no
+}
+
+enum ps_endpoints_allow_transfer {
+  yes
+  no
+}
+
+enum ps_endpoints_allow_subscribe {
+  yes
+  no
+}
+
+enum sippeers_constantssrc {
+  yes
+  no
+}
+
+enum sippeers_usereqphone {
+  yes
+  no
+}
+
+enum sippeers_textsupport {
+  yes
+  no
+}
+
+enum sippeers_faxdetect {
+  yes
+  no
+}
+
+enum sippeers_buggymwi {
+  yes
+  no
+}
+
+enum sippeers_callingpres {
+  allowed_not_screened
+  allowed_passed_screen
+  allowed_failed_screen
+  allowed
+  prohib_not_screened
+  prohib_passed_screen
+  prohib_failed_screen
+  prohib
+}
+
+enum ps_endpoints_dtls_setup {
+  active
+  passive
+  actpass
+}
+
+enum ps_endpoints_srtp_tag_32 {
+  yes
+  no
+}
+
+enum sippeers_hasvoicemail {
+  yes
+  no
+}
+
+enum ps_endpoints_redirect_method {
+  user
+  uri_core
+  uri_pjsip
+}
+
+enum sippeers_subscribemwi {
+  yes
+  no
+}
+
+enum sippeers_autoframing {
+  yes
+  no
+}
+
+enum ps_endpoints_force_avp {
+  yes
+  no
+}
+
+enum sippeers_g726nonstandard {
+  yes
+  no
+}
+
+enum ps_endpoints_media_use_received_transport {
+  yes
+  no
+}
+
+enum sippeers_ignoresdpversion {
+  yes
+  no
+}
+
+enum sippeers_allowtransfer {
+  yes
+  no
+}
+
+enum ps_endpoints_user_eq_phone {
+  yes
+  no
+}
+
+enum sippeers_dynamic {
+  yes
+  no
+}
+
+enum ps_endpoints_moh_passthrough {
+  yes
+  no
+}
+
+enum ps_endpoints_media_encryption_optimistic {
+  yes
+  no
+}
+
+enum sippeers_supportpath {
+  yes
+  no
+}
+
+enum ps_endpoints_rpid_immediate {
+  yes
+  no
+}
+
+enum ps_endpoints_g726_non_standard {
+  yes
+  no
+}
+
+enum ps_endpoints_bind_rtp_to_media_address {
+  yes
+  no
+}
+
+enum ps_endpoints_preferred_codec_only {
+  yes
+  no
+}
+
+enum ps_endpoints_asymmetric_rtp_codec {
+  yes
+  no
+}
+
+enum ps_endpoints_rtcp_mux {
+  yes
+  no
+}
+
+enum ps_endpoints_allow_overlap {
+  yes
+  no
+}
+
+enum ps_endpoints_refer_blind_progress {
+  yes
+  no
+}
+
+enum ps_endpoints_notify_early_inuse_ringing {
+  yes
+  no
+}
+
+enum ps_endpoints_webrtc {
+  yes
+  no
+}
+
+enum ps_endpoints_dtls_fingerprint {
+  SHA_1   @map("SHA-1")
+  SHA_256 @map("SHA-256")
+}
+
+enum ps_endpoints_bundle {
+  yes
+  no
+}
+
+enum ps_endpoints_dtls_auto_generate_cert {
+  yes
+  no
+}
+
+enum ps_endpoints_follow_early_media_fork {
+  yes
+  no
+}
+
+enum ps_endpoints_accept_multiple_sdp_answers {
+  yes
+  no
+}
+
+enum ps_endpoints_suppress_q850_reason_headers {
+  yes
+  no
+}
+
+enum ps_endpoints_incoming_call_offer_pref {
+  local
+  local_first
+  remote
+  remote_first
+}
+
+enum ps_endpoints_outgoing_call_offer_pref {
+  local
+  local_merge
+  local_first
+  remote
+  remote_merge
+  remote_first
+}
+
+enum ps_endpoints_security_negotiation {
+  no
+  mediasec
+}
+
+enum ps_resource_list_resource_display_name {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum queue_members_ringinuse {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_systems_disable_rport {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_aors_remove_unavailable {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_registrations_support_outbound {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum sippeers_transport {
+  udp
+  tcp
+  tls
+  ws
+  wss
+}
+
+enum ps_globals_use_callerid_contact {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_globals_send_contact_status_on_update_registration {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_globals_norefersub {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_globals_allow_sending_180_after_183 {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_globals_all_codecs_on_empty_reinvite {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_mwi_subscribe_replaces_unsolicited {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_trust_connected_line {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_send_connected_line {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_ignore_183_without_sdp {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_stir_shaken {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_send_history_info {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_allow_unauthenticated_options {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_t38_bind_udptl_to_media_address {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
+}
+
+enum ps_endpoints_send_aoc {
+  // 0 @map("0")
+  // 1 @map("1")
+  off
+  on
+  false
+  true
+  no
+  yes
 }

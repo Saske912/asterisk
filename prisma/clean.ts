@@ -1,29 +1,54 @@
 
 import { PrismaClient } from "@prisma/client";
-import { pjsip } from "./seed/pjsip";
-import { trunks } from "./seed/trunks";
-import { trunk_dialpatterns } from "./seed/trunk_dialpatterns";
 
 const prisma = new PrismaClient();
 async function main() {
-	await prisma.trunks.deleteMany({
-		where: {
-			trunkid: {
-				in: trunks.trunks.map(trunk => trunk.trunkid)
-			}
-		}
-	})
-	await prisma.pjsip.deleteMany({
+	await prisma.ps_endpoints.deleteMany({
 		where: {
 			id: {
-				in: pjsip.pjsip.map(pjsip => pjsip.id)
+				not: ""
 			}
 		}
 	})
-	await prisma.trunk_dialpatterns.deleteMany({
+	await prisma.ps_auths.deleteMany({
 		where: {
-			trunkid: {
-				in: trunk_dialpatterns.trunk_dialpatterns.map(trunk_dialpattern => trunk_dialpattern.trunkid)
+			id: {
+				not: ""
+			}
+		}
+	})
+	await prisma.ps_registrations.deleteMany({
+		where: {
+			id: {
+				not: ""
+			}
+		}
+	})
+	await prisma.sippeers.deleteMany({
+		where: {
+			name: {
+				not: ""
+			}
+		}
+	})
+	await prisma.ps_aors.deleteMany({
+		where: {
+			id: {
+				not: ""
+			}
+		}
+	})
+	await prisma.iaxfriends.deleteMany({
+		where: {
+			name: {
+				not: ""
+			}
+		}
+	})
+	await prisma.extensions.deleteMany({
+		where: {
+			context: {
+				not: ""
 			}
 		}
 	})

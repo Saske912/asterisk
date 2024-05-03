@@ -30,6 +30,7 @@ resource "helm_release" "mariadb" {
 
 locals {
   implicit_host = "mariadb.mariadb"
+  host          = "10.0.0.45"
 }
 
 resource "vault_kv_secret_v2" "mariadb" {
