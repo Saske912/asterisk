@@ -105,6 +105,15 @@ function main() {
                         })];
                 case 7:
                     _a.sent();
+                    return [4 /*yield*/, prisma.ps_endpoint_id_ips.deleteMany({
+                            where: {
+                                id: {
+                                    not: ""
+                                }
+                            }
+                        })];
+                case 8:
+                    _a.sent();
                     return [2 /*return*/];
             }
         });

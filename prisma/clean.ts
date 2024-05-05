@@ -52,6 +52,13 @@ async function main() {
 			}
 		}
 	})
+	await prisma.ps_endpoint_id_ips.deleteMany({
+		where: {
+			id: {
+				not: ""
+			}
+		}
+	})
 }
 main()
 	.catch((e) => {
