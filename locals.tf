@@ -22,7 +22,7 @@ locals {
       protocol = "UDP"
     }
     pjsip-secure = {
-      number   = 5160
+      number   = 5161
       protocol = "UDP"
     }
     https = {

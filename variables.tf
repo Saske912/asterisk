@@ -33,3 +33,12 @@ variable "vault" {
     token = string
   })
 }
+
+variable "cloudflare" {
+  type = object({
+    email    = string
+    password = string
+    token    = string
+    zone     = map(string)
+  })
+}
