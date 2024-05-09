@@ -164,9 +164,20 @@ resource "kubernetes_persistent_volume_v1" "logs" {
         path = "/mnt/asterisk/logs"
       }
     }
-    access_modes = ["ReadWriteOnce"]
+    access_modes = ["ReadWriteOnce", "ReadOnlyMany"]
     capacity = {
       "storage" = "3Gi"
+    }
+    storage_class_name = "local-path"
+    node_affinity {
+      required {
+        node_selector_term {
+          match_expressions {
+            key      = "node-role.kubernetes.io/control-plane"
+            operator = "Exists"
+          }
+        }
+      }
     }
   }
 }
@@ -184,6 +195,7 @@ resource "kubernetes_persistent_volume_claim_v1" "logs" {
         storage = "3Gi"
       }
     }
+    storage_class_name = "local-path"
   }
   timeouts {
     create = "60s"
