@@ -4,6 +4,10 @@ terraform {
     config_path   = "~/.kube/config"
   }
   required_providers {
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "~> 3.0"
+    }
     vault = {
       source  = "hashicorp/vault"
       version = "3.9.1"
@@ -87,6 +91,10 @@ resource "kubernetes_deployment_v1" "asterisk" {
             name       = "odbc-driver"
             sub_path   = "MariaDB_odbc_driver_template.ini"
           }
+          volume_mount {
+            mount_path = "/var/log/asterisk"
+            name       = "logs"
+          }
         }
         volume {
           name = "odbc-driver"
@@ -106,6 +114,12 @@ resource "kubernetes_deployment_v1" "asterisk" {
               key  = "config.ini"
               path = "config.ini"
             }
+          }
+        }
+        volume {
+          name = "logs"
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim_v1.logs.metadata[0].name
           }
         }
         volume {
@@ -137,6 +151,42 @@ resource "kubernetes_deployment_v1" "asterisk" {
         app = "asterisk"
       }
     }
+  }
+}
+
+resource "kubernetes_persistent_volume_v1" "logs" {
+  metadata {
+    name = "logs"
+  }
+  spec {
+    persistent_volume_source {
+      local {
+        path = "/mnt/asterisk/logs"
+      }
+    }
+    access_modes = ["ReadWriteOnce"]
+    capacity = {
+      "storage" = "3Gi"
+    }
+  }
+}
+
+resource "kubernetes_persistent_volume_claim_v1" "logs" {
+  metadata {
+    name      = "logs"
+    namespace = kubernetes_namespace_v1.asterisk.metadata[0].name
+  }
+  spec {
+    access_modes = ["ReadWriteOnce"]
+    volume_name  = "logs"
+    resources {
+      requests = {
+        storage = "3Gi"
+      }
+    }
+  }
+  timeouts {
+    create = "60s"
   }
 }
 

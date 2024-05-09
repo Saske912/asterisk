@@ -19,3 +19,20 @@ provider "vault" {
   token   = var.vault.token
 }
 
+provider "cloudflare" {
+  api_token = var.cloudflare.token
+}
+
+resource "vault_mount" "api_providers" {
+  type        = "kv"
+  path        = "api_providers"
+  options     = { version = "2" }
+  description = "api providers secrets"
+}
+
+resource "vault_kv_secret_v2" "cloudflare" {
+  mount     = vault_mount.api_providers.path
+  name      = "cloudflare"
+  data_json = jsonencode(var.cloudflare)
+}
+

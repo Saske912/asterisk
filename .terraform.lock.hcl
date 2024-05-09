@@ -1,6 +1,14 @@
 # This file is maintained automatically by "terraform init".
 # Manual edits may be lost in future updates.
 
+provider "registry.terraform.io/cloudflare/cloudflare" {
+  version     = "3.35.0"
+  constraints = "~> 3.0"
+  hashes = [
+    "h1:SFvdgX5bTGhOTMhywgjSOWlkET2el7STxdUSzxjz2pc=",
+  ]
+}
+
 provider "registry.terraform.io/gavinbunney/kubectl" {
   version = "1.14.0"
   hashes = [

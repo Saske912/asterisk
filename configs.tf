@@ -83,6 +83,7 @@ load => res_config_mysql.so
 load => app_realtime.so
 load => func_realtime.so
 load => pbx_realtime.so
+load = res_security_log.so
 EOT
     "logger.conf"          = <<EOT
 [general]
