@@ -20,6 +20,7 @@ async function main() {
 			auth_type: "userpass",
 		}
 	})
+	console.log("auth created")
 	// await prisma.ps_endpoints.create({
 	// 	data: {
 	// 		id: "goip_16_2",
@@ -109,16 +110,24 @@ async function main() {
 			direct_media_method: null
 		}
 	})
-	await prisma.extensions.create({
-		data: {
-			context: "default",
-			exten: "_+7XXXXXXXXXX",
-			priority: 1,
-			app: "Dial",
-			// appdata: "PJSIP/goip_16_2@goip_16_2"
-			appdata: "PJSIP/8${EXTEN:2}@goip_16_2"
-		}
-	})
+	// await prisma.extensions.create({
+	// 	data: {
+	// 		context: "default",
+	// 		exten: "_+7XXXXXXXXXX",
+	// 		priority: 1,
+	// 		app: "Dial",
+	// 		appdata: "PJSIP/8${EXTEN:2}@goip_16_2"
+	// 	}
+	// })
+	// await prisma.extensions.create({
+	// 	data: {
+	// 		context: "default",
+	// 		exten: "_+7XXXXXXXXXX",
+	// 		priority: 2,
+	// 		app: "System",
+	// 		appdata: '/bin/echo -e "Dial Status is ${ DIALSTATUS }"'
+	// 	}
+	// })
 	// await prisma.extensions.create({
 	// 	data: {
 	// 		context: "default",
