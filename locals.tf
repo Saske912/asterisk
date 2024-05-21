@@ -17,6 +17,10 @@ locals {
   #     ENABLE_FAIL2BAN            = "TRUE"
   #   })
   ports = tomap({
+    ami = {
+      number   = 5038
+      protocol = "TCP"
+    }
     pjsip = {
       number   = 5060
       protocol = "UDP"

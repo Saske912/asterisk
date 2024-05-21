@@ -125,21 +125,32 @@ priv_key_file=/etc/keys/tls.key
 type = transport
 protocol = udp
 bind = 0.0.0.0:5060
-
+;local_net=10.0.0.0/8
+;local_net=127.0.0.1/32
+;external_media_address=10.0.0.45
+;external_signaling_address=10.0.0.45
 EOT
     "pjsip_wizard.conf"    = <<EOT
      [goip_16_2]
      type = wizard
      sends_auth = yes
-     sends_registrations = yes
+;     sends_registrations = yes
      accepts_auth = yes
-     accepts_registrations = no
+;     accepts_registrations = no
      endpoint/context=default
      endpoint/transport=transport-udp
      endpoint/allow = !all,ulaw,alaw
+;     endpoint/direct_media = no
+;     endpoint/rpt_symmetric = yes
+;     endpoint/force_rport = yes
+;     endpoint/rewrite_contact = yes
+     aor/max_contacts = 16
+;     aor/contact = sip:${var.asterisk.goip.endpoint}
      remote_hosts = ${var.asterisk.goip.endpoint}
      outbound_auth/username = ${var.asterisk.goip.username}
      outbound_auth/password = ${var.asterisk.goip.password}
+     inbound_auth/username = ${var.asterisk.goip.username}
+     inbound_auth/password =  ${var.asterisk.goip.password}
     EOT
     "ccss.conf"            = <<EOT
 [general]
@@ -195,8 +206,8 @@ ps_endpoint_id_ips =>  odbc,asterisk
 ps_contacts => odbc,asterisk
 ps_registrations => odbc,asterisk
 extensions => odbc,asterisk,extensions
-queues => odbc,asterisk;,voice_queue
-queue_members => odbc,asterisk;,voice_agenci
+queues => odbc,asterisk
+queue_members => odbc,asterisk
 
 sipusers => odbc,asterisk,sippeers
 sippeers => odbc,asterisk,sippeers
@@ -206,6 +217,16 @@ EOT
 enabled=yes
 bindaddr=0.0.0.0
 bindport=8088
+EOT
+    "manager.conf"         = <<EOT
+[general]
+enabled=yes
+bindaddr=0.0.0.0
+webenabled=yes
+[${var.asterisk.username}]
+secret = ${random_password.passowrd.result}
+read = all
+write = all
 EOT
     "indications.conf"     = <<EOT
 [ru]
@@ -232,18 +253,54 @@ EOT
       same => n,Playback(ru/vm-sorry)
       same => n,Hangup()
     exten => _+7XXXXXXXXXX,1,Dial(PJSIP/8$${EXTEN:2}@goip_16_2)
-      same => System(/bin/echo -e "Dial Status is $${ DIALSTATUS }")
       same => n,NoOp(Dial Status is $${DIALSTATUS})
+      same => n,System(/bin/echo -e "Dial Status is $${DIALSTATUS}")
 ;    exten => _8XXXXXXXXXX,1,Dial(PJSIP/goip_16_2/$${EXTEN})
 ;    exten => _XXXXXXXXXXX,1,Dial(PJSIP/goip_16_2/$${EXTEN})
 ;    exten => _1.,1,Dial(PJSIP/goip_16_2/$${EXTEN})
+;    [incoming-from-website]
+;    exten => _+7XXXXXXXXXX,1,Set(CALLERID(num)=$${EXTEN})
+;    exten => _+7XXXXXXXXXX,n,Dial(PJSIP/8$${EXTEN:2}@goip_16_2,20)
+;    exten => _+7XXXXXXXXXX,n,GotoIf($["$${DIALSTATUS}" = "NOANSWER"]?4)
+;    exten => _+7XXXXXXXXXX,n,Hangup()
+;    exten => _+7XXXXXXXXXX,4,Gosub(manager-notify,start,1($${CALLERID(num)},in))
+;
+;    [outgoing-callback]
+;    exten => _X.,1,Set(CALLERID(num)=12345678)
+;    exten => _X.,n,Dial(PJSIP/8$${EXTEN}@goip_16_2,20)
+;    exten => _X.,n,GotoIf($["$${DIALSTATUS}" = "NOANSWER"]?4)
+;    exten => _X.,n,Hangup()
+;    exten => _X.,4,Gosub(manager-notify,start,1($${EXTEN},out))
+;
+;    [manager-notify]
+;    exten => start,1,Answer()
+;    exten => start,n,Set(CHANNEL(hangup)=never)
+;    exten => start,n,Dial(PJSIP/104&PJSIP/103,30,m)
+;    exten => start,n,GotoIf($["$${DIALSTATUS}" = "NOANSWER"]?8)
+;    exten => start,n,Set(CHANNEL(hangup)=true)
+;    exten => start,n,Bridge($${ARG2})
+;    exten => start,n,return()
+;    exten => start,8,HangupCauseClear()
+;    exten => start,n,return()
     EOT
     "rtp.conf"             = <<EOT
 [rtp_defaults]
 [general]
 [default]
+strictrpt=no
 rtpstart=10000
 rtpend=10032
 EOT
   }
+}
+
+resource "vault_kv_secret_v2" "asterisk" {
+  mount = "api_providers"
+  name  = "asterisk"
+  data_json = jsonencode({
+    username = var.asterisk.username
+    password = random_password.passowrd.result
+    host     = "asterisk.asterisk"
+    ami_port = "5038"
+  })
 }
