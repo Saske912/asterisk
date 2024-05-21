@@ -22,6 +22,12 @@ resource "kubernetes_service" "goip" {
       name        = "sms-udp"
       protocol    = "UDP"
     }
+    port {
+      port        = 5060
+      target_port = "sip"
+      name        = "sip"
+      protocol    = "UDP"
+    }
 
     type = "ClusterIP"
   }
@@ -45,6 +51,11 @@ resource "kubernetes_endpoints" "goip" {
     port {
       port = 9991
       name = "sms"
+    }
+    port {
+      port     = 5060
+      name     = "sip"
+      protocol = "UDP"
     }
     port {
       port     = 9991

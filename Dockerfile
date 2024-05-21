@@ -38,7 +38,7 @@ git checkout tags/$BCG729_VERSION && \
 ./autogen.sh && \
 ./configure --prefix=/usr --libdir=/lib && \
 make && \
-make install && \
+make install && \   
 \
 mkdir -p /usr/src/asterisk-g72x && \
 curl https://bitbucket.org/arkadi/asterisk-g72x/get/master.tar.gz | tar xvfz - --strip 1 -C /usr/src/asterisk-g72x && \
