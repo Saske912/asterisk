@@ -58,29 +58,10 @@ function main() {
                                 password: password,
                                 auth_type: "userpass",
                             }
-                        })
-                        // await prisma.ps_endpoints.create({
-                        // 	data: {
-                        // 		id: "goip_16_2",
-                        // 		aors: "goip_16_2",
-                        // 		// transport: "transport-udp",
-                        // 		auth: "goip_16_2",
-                        // 		disable_direct_media_on_nat: "yes",
-                        // 		outbound_auth: "goip_16_2",
-                        // 		dtmf_mode: "auto",
-                        // 		// callerid: "Goip<goip_16_2>",
-                        // 		context: "default",
-                        // 		force_rport: "yes",
-                        // 		direct_media: "no",
-                        // 		rewrite_contact: "yes",
-                        // 		// disallow: "all",
-                        // 		// allow: "ulaw,alaw",
-                        // 		// direct_media_method: null
-                        // 	}
-                        // })
-                    ];
+                        })];
                 case 1:
                     _a.sent();
+                    console.log("auth created");
                     // await prisma.ps_endpoints.create({
                     // 	data: {
                     // 		id: "goip_16_2",
@@ -200,19 +181,25 @@ function main() {
                                 allow: "ulaw,alaw",
                                 direct_media_method: null
                             }
-                        })];
-                case 8:
-                    _a.sent();
-                    return [4 /*yield*/, prisma.extensions.create({
-                            data: {
-                                context: "default",
-                                exten: "_+7XXXXXXXXXX",
-                                priority: 1,
-                                app: "Dial",
-                                // appdata: "PJSIP/goip_16_2@goip_16_2"
-                                appdata: "PJSIP/8${EXTEN:2}@goip_16_2"
-                            }
                         })
+                        // await prisma.extensions.create({
+                        // 	data: {
+                        // 		context: "default",
+                        // 		exten: "_+7XXXXXXXXXX",
+                        // 		priority: 1,
+                        // 		app: "Dial",
+                        // 		appdata: "PJSIP/8${EXTEN:2}@goip_16_2"
+                        // 	}
+                        // })
+                        // await prisma.extensions.create({
+                        // 	data: {
+                        // 		context: "default",
+                        // 		exten: "_+7XXXXXXXXXX",
+                        // 		priority: 2,
+                        // 		app: "System",
+                        // 		appdata: '/bin/echo -e "Dial Status is ${ DIALSTATUS }"'
+                        // 	}
+                        // })
                         // await prisma.extensions.create({
                         // 	data: {
                         // 		context: "default",
@@ -234,8 +221,26 @@ function main() {
                         // 	}
                         // })
                     ];
-                case 9:
+                case 8:
                     _a.sent();
+                    // await prisma.extensions.create({
+                    // 	data: {
+                    // 		context: "default",
+                    // 		exten: "_+7XXXXXXXXXX",
+                    // 		priority: 1,
+                    // 		app: "Dial",
+                    // 		appdata: "PJSIP/8${EXTEN:2}@goip_16_2"
+                    // 	}
+                    // })
+                    // await prisma.extensions.create({
+                    // 	data: {
+                    // 		context: "default",
+                    // 		exten: "_+7XXXXXXXXXX",
+                    // 		priority: 2,
+                    // 		app: "System",
+                    // 		appdata: '/bin/echo -e "Dial Status is ${ DIALSTATUS }"'
+                    // 	}
+                    // })
                     // await prisma.extensions.create({
                     // 	data: {
                     // 		context: "default",
@@ -265,7 +270,25 @@ function main() {
                                 appdata: "PJSIP/goip_16_2/${EXTEN}"
                             }
                         })];
-                case 10:
+                case 9:
+                    // await prisma.extensions.create({
+                    // 	data: {
+                    // 		context: "default",
+                    // 		exten: "_+7XXXXXXXXXX",
+                    // 		priority: 1,
+                    // 		app: "Dial",
+                    // 		appdata: "PJSIP/8${EXTEN:2}@goip_16_2"
+                    // 	}
+                    // })
+                    // await prisma.extensions.create({
+                    // 	data: {
+                    // 		context: "default",
+                    // 		exten: "_+7XXXXXXXXXX",
+                    // 		priority: 2,
+                    // 		app: "System",
+                    // 		appdata: '/bin/echo -e "Dial Status is ${ DIALSTATUS }"'
+                    // 	}
+                    // })
                     // await prisma.extensions.create({
                     // 	data: {
                     // 		context: "default",
@@ -354,7 +377,7 @@ function main() {
                         // 	}
                         // })
                     ];
-                case 11:
+                case 10:
                     _a.sent();
                     return [2 /*return*/];
             }
